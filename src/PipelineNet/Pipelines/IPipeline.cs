@@ -12,5 +12,11 @@ namespace PipelineNet.Pipelines
         /// <returns></returns>
         IPipeline<TParameter> Add<TMiddleware>()
             where TMiddleware : IMiddleware<TParameter>;
+
+        /// <summary>
+        /// Execute the configured pipeline.
+        /// </summary>
+        /// <param name="parameter"></param>
+        void Execute(TParameter parameter);
     }
 }

@@ -36,14 +36,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="NBench, Version=0.3.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NBench.Runner.0.3.1\lib\net45\NBench.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="NBench.Runner, Version=0.3.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NBench.Runner.0.3.1\lib\net45\NBench.Runner.exe</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <Choose>
@@ -67,9 +59,6 @@
       <Project>{2effd720-a1cc-4f32-99f8-655bb1cc3632}</Project>
       <Name>PipelineNet</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

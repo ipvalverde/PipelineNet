@@ -86,5 +86,40 @@ namespace PipelineNet.Tests.Pipeline
             // Check if the level of 'personModel' is 3, which is configured by 'PersonWithEmailName' middleware.
             Assert.AreEqual(3, personModel.Level);
         }
+
+        [TestMethod]
+        public void Execute_RunSamePipelineTwice_SuccessfullyExecute()
+        {
+            var pipeline = new Pipeline<PersonModel>(new ActivatorMiddlewareResolver())
+                .Add<PersonWithEvenId>()
+                .Add<PersonWithOddId>()
+                .Add<PersonWithEmailName>()
+                .Add<PersonWithGenderProperty>();
+
+            // This person model has a name that matches the 'PersonWithEmailName' middleware.
+            var personModel = new PersonModel
+            {
+                Name = "this_is_my_email@servername.js"
+            };
+
+            pipeline.Execute(personModel);
+
+            // Check if the level of 'personModel' is 3, which is configured by 'PersonWithEmailName' middleware.
+            Assert.AreEqual(3, personModel.Level);
+
+
+            // Creates a new instance with a 'Gender' property. The 'PersonWithGenderProperty'
+            // middleware should be the last one to be executed.
+            personModel = new PersonModel
+            {
+                Name = "this_is_my_email@servername.js",
+                Gender = Gender.Other
+            };
+
+            pipeline.Execute(personModel);
+
+            // Check if the level of 'personModel' is 4, which is configured by 'PersonWithGenderProperty' middleware.
+            Assert.AreEqual(4, personModel.Level);
+        }
     }
 }
