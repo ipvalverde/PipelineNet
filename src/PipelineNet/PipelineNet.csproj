@@ -40,12 +40,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MiddlewareResolver\ActivatorMiddlewareResolver.cs" />
-    <Compile Include="IPipeline.cs" />
-    <Compile Include="Pipeline.cs" />
-    <Compile Include="Middleware\IMiddleware.cs" />
+    <Compile Include="Pipelines\MiddlewareResolver\ActivatorMiddlewareResolver.cs" />
+    <Compile Include="Pipelines\IPipeline.cs" />
+    <Compile Include="Pipelines\Pipeline.cs" />
+    <Compile Include="Pipelines\IMiddleware.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="MiddlewareResolver\IMiddlewareResolver.cs" />
+    <Compile Include="Pipelines\MiddlewareResolver\IMiddlewareResolver.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
