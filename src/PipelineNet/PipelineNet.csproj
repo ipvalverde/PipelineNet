@@ -40,6 +40,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Pipelines\AsyncPipeline.cs" />
+    <Compile Include="Pipelines\IAsyncMiddleware.cs" />
+    <Compile Include="Pipelines\IAsyncPipeline.cs" />
     <Compile Include="Pipelines\MiddlewareResolver\ActivatorMiddlewareResolver.cs" />
     <Compile Include="Pipelines\IPipeline.cs" />
     <Compile Include="Pipelines\Pipeline.cs" />
