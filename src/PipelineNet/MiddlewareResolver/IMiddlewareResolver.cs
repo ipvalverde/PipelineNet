@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PipelineNet.Pipelines.ServiceDependency
+namespace PipelineNet.MiddlewareResolver
 {
     /// <summary>
     /// Used to create instances of middleware.

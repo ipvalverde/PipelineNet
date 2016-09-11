@@ -1,23 +1,23 @@
 ﻿using PipelineNet.Middleware;
-using System.Threading.Tasks;
 
-namespace PipelineNet.Pipelines
+namespace PipelineNet.ChainsOfResponsibility
 {
-    public interface IAsyncPipeline<TParameter>
+    public interface IResponsibilityChain<TParameter, TReturn>
         where TParameter : class
+        where TReturn : class
     {
         /// <summary>
         /// Adds a middleware type to be executed.
         /// </summary>
         /// <typeparam name="TMiddleware"></typeparam>
         /// <returns></returns>
-        IAsyncPipeline<TParameter> Add<TMiddleware>()
-            where TMiddleware : IAsyncMiddleware<TParameter>;
+        IResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>()
+            where TMiddleware : IMiddleware<TParameter, TReturn>;
 
         /// <summary>
         /// Execute the configured pipeline.
         /// </summary>
         /// <param name="parameter"></param>
-        Task Execute(TParameter parameter);
+        TReturn Execute(TParameter parameter);
     }
 }

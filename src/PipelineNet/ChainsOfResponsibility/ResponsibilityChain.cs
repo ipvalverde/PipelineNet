@@ -2,17 +2,17 @@
 using PipelineNet.MiddlewareResolver;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace PipelineNet.Pipelines
+namespace PipelineNet.ChainsOfResponsibility
 {
-    public class AsyncPipeline<TParameter> : IAsyncPipeline<TParameter>
+    public class ResponsibilityChain<TParameter, TReturn> : IResponsibilityChain<TParameter, TReturn>
         where TParameter : class
+        where TReturn : class
     {
         private readonly IList<Type> _middlewareTypes;
         private readonly IMiddlewareResolver _middlewareResolver;
 
-        public AsyncPipeline(IMiddlewareResolver middlewareResolver)
+        public ResponsibilityChain(IMiddlewareResolver middlewareResolver)
         {
             if (middlewareResolver == null) throw new ArgumentNullException("middlewareResolver",
                 "An instance of IMiddlewareResolver must be provided. You can use ActivatorMiddlewareResolver.");
@@ -26,33 +26,33 @@ namespace PipelineNet.Pipelines
         /// </summary>
         /// <typeparam name="TMiddleware"></typeparam>
         /// <returns></returns>
-        public IAsyncPipeline<TParameter> Add<TMiddleware>()
-            where TMiddleware : IAsyncMiddleware<TParameter>
+        public IResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>()
+            where TMiddleware : IMiddleware<TParameter, TReturn>
         {
             _middlewareTypes.Add(typeof(TMiddleware));
             return this;
         }
 
-        public async Task Execute(TParameter parameter)
+        public TReturn Execute(TParameter parameter)
         {
             if (_middlewareTypes.Count == 0)
-                return;
+                return default(TReturn);
 
             int index = 0;
-            Func<TParameter, Task> action = null;
-            action = async (param) =>
+            Func<TParameter, TReturn> func = null;
+            func = (param) =>
             {
                 var type = _middlewareTypes[index];
-                var firstMiddleware = (IAsyncMiddleware<TParameter>)_middlewareResolver.Resolve(type);
+                var middleware = (IMiddleware<TParameter, TReturn>)_middlewareResolver.Resolve(type);
 
                 index++;
                 if (index == _middlewareTypes.Count)
-                    action = (p) => { return Task.FromResult(0); };
+                    func = (p) => default(TReturn);
 
-                await firstMiddleware.Run(param, action);
+                return middleware.Run(param, func);
             };
 
-            await action(parameter);
+            return func(parameter);
         }
     }
 }

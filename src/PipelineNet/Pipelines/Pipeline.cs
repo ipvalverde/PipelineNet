@@ -1,5 +1,5 @@
 ﻿using PipelineNet.Middleware;
-using PipelineNet.Pipelines.ServiceDependency;
+using PipelineNet.MiddlewareResolver;
 using System;
 using System.Collections.Generic;
 
@@ -42,13 +42,13 @@ namespace PipelineNet.Pipelines
             action = (param) =>
             {
                 var type = _middlewareTypes[index];
-                var firstMiddleware = (IMiddleware<TParameter>)_middlewareResolver.Resolve(type);
+                var middleware = (IMiddleware<TParameter>)_middlewareResolver.Resolve(type);
 
                 index++;
                 if (index == _middlewareTypes.Count)
                     action = (p) => { };
 
-                firstMiddleware.Run(param, action);
+                middleware.Run(param, action);
             };
 
             action(parameter);

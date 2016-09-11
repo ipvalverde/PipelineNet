@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PipelineNet.Middleware;
+using PipelineNet.MiddlewareResolver;
 using PipelineNet.Pipelines;
-using PipelineNet.Pipelines.DependencyResolver;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading;

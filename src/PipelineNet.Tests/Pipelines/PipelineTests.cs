@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PipelineNet.Middleware;
 using System.Text.RegularExpressions;
 using PipelineNet.Pipelines;
-using PipelineNet.Pipelines.DependencyResolver;
+using PipelineNet.MiddlewareResolver;
 
 namespace PipelineNet.Tests.Pipeline
 {

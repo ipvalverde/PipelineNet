@@ -1,11 +1,10 @@
-﻿using PipelineNet.Pipelines.ServiceDependency;
-using System;
+﻿using System;
 
-namespace PipelineNet.Pipelines.DependencyResolver
+namespace PipelineNet.MiddlewareResolver
 {
     /// <summary>
     /// A default implementation of <see cref="IMiddlewareResolver"/> that creates
-    /// instances using the regular <see cref="System.Activator"/>.
+    /// instances using the <see cref="System.Activator"/>.
     /// </summary>
     public class ActivatorMiddlewareResolver : IMiddlewareResolver
     {
