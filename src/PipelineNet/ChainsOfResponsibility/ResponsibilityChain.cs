@@ -11,6 +11,7 @@ namespace PipelineNet.ChainsOfResponsibility
     {
         private readonly IList<Type> _middlewareTypes;
         private readonly IMiddlewareResolver _middlewareResolver;
+        private Func<TParameter, TReturn> _finallyFunc;
 
         public ResponsibilityChain(IMiddlewareResolver middlewareResolver)
         {
@@ -22,10 +23,22 @@ namespace PipelineNet.ChainsOfResponsibility
         }
 
         /// <summary>
-        /// Adds a middleware type to be executed.
+        /// Sets the function to be executed at the end of the chain as a fallback.
+        /// A chain can only have one finally function. Calling this method more
+        /// a second time will just replace the existing finally <see cref="Func{TParameter, TResult}<"/>.
         /// </summary>
-        /// <typeparam name="TMiddleware"></typeparam>
-        /// <returns></returns>
+        /// <param name="finallyFunc">The <see cref="Func{TParameter, TResult}"/> that will be execute at the end of chain.</param>
+        public void Finally(Func<TParameter, TReturn> finallyFunc)
+        {
+            this._finallyFunc = finallyFunc;
+        }
+
+        /// <summary>
+        /// Chain a new middleware to the chain of responsibility.
+        /// Middleware will be executed in the same order they are added.
+        /// </summary>
+        /// <typeparam name="TMiddleware">The new middleware being added.</typeparam>
+        /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
         public IResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>()
             where TMiddleware : IMiddleware<TParameter, TReturn>
         {
@@ -33,6 +46,10 @@ namespace PipelineNet.ChainsOfResponsibility
             return this;
         }
 
+        /// <summary>
+        /// Execute the configured chain of responsibility.
+        /// </summary>
+        /// <param name="parameter"></param>
         public TReturn Execute(TParameter parameter)
         {
             if (_middlewareTypes.Count == 0)
@@ -46,8 +63,11 @@ namespace PipelineNet.ChainsOfResponsibility
                 var middleware = (IMiddleware<TParameter, TReturn>)_middlewareResolver.Resolve(type);
 
                 index++;
+                // If the current instance of middleware is the last one in the list,
+                // the "next" function is assigned to the finally function or a 
+                // default empty function.
                 if (index == _middlewareTypes.Count)
-                    func = (p) => default(TReturn);
+                    func = this._finallyFunc ?? ((p) => default(TReturn));
 
                 return middleware.Run(param, func);
             };
