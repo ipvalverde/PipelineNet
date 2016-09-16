@@ -11,7 +11,8 @@ namespace PipelineNet.ChainsOfResponsibility
         /// a second time will just replace the existing finally <see cref="Func{TParameter, TResult}<"/>.
         /// </summary>
         /// <param name="finallyFunc">The <see cref="Func{TParameter, TResult}"/> that will be execute at the end of chain.</param>
-        void Finally(Func<TParameter, TReturn> finallyFunc);
+        /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
+        IResponsibilityChain<TParameter, TReturn> Finally(Func<TParameter, TReturn> finallyFunc);
 
         /// <summary>
         /// Chain a new middleware to the chain of responsibility.

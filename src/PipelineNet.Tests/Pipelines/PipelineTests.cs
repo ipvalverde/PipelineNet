@@ -10,6 +10,7 @@ namespace PipelineNet.Tests.Pipeline
     [TestClass]
     public class PipelineTests
     {
+        #region Parameter definitions
         public enum Gender
         {
             Male,
@@ -25,7 +26,9 @@ namespace PipelineNet.Tests.Pipeline
 
             public int Level { get; set; }
         }
+        #endregion
 
+        #region Middleware definitions
         public class PersonWithEvenId : IMiddleware<PersonModel>
         {
             public void Run(PersonModel context, Action<PersonModel> executeNext)
@@ -65,6 +68,7 @@ namespace PipelineNet.Tests.Pipeline
                 executeNext(context);
             }
         }
+        #endregion
 
         [TestMethod]
         public void Execute_RunSeveralMiddleware_SuccessfullyExecute()

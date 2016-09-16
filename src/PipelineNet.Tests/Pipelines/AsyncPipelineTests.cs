@@ -12,7 +12,7 @@ namespace PipelineNet.Tests.Pipelines
     [TestClass]
     public class AsyncPipelineTests
     {
-        #region Enum e parameter definition
+        #region Parameter definitions
         public enum Gender
         {
             Male,
