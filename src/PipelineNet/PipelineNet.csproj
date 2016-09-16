@@ -40,6 +40,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChainsOfResponsibility\AsyncResponsibilityChain.cs" />
+    <Compile Include="ChainsOfResponsibility\IAsyncResponsibilityChain.cs" />
     <Compile Include="ChainsOfResponsibility\IResponsibilityChain.cs" />
     <Compile Include="ChainsOfResponsibility\ResponsibilityChain.cs" />
     <Compile Include="Middleware\IAsyncMiddleware.WithReturn.cs" />

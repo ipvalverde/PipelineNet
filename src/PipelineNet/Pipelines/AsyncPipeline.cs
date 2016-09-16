@@ -33,6 +33,10 @@ namespace PipelineNet.Pipelines
             return this;
         }
 
+        /// <summary>
+        /// Execute the configured pipeline.
+        /// </summary>
+        /// <param name="parameter"></param>
         public async Task Execute(TParameter parameter)
         {
             if (_middlewareTypes.Count == 0)
@@ -47,7 +51,7 @@ namespace PipelineNet.Pipelines
 
                 index++;
                 if (index == _middlewareTypes.Count)
-                    action = (p) => { return Task.FromResult(0); };
+                    action = async (p) => { };
 
                 await firstMiddleware.Run(param, action);
             };
