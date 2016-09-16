@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 namespace PipelineNet.Pipelines
 {
     public interface IAsyncPipeline<TParameter>
-        where TParameter : class
     {
         /// <summary>
         /// Adds a middleware type to be executed.

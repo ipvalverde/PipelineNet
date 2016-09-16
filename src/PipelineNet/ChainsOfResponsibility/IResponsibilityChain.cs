@@ -4,8 +4,6 @@ using System;
 namespace PipelineNet.ChainsOfResponsibility
 {
     public interface IResponsibilityChain<TParameter, TReturn>
-        where TParameter : class
-        where TReturn : class
     {
         /// <summary>
         /// Sets the function to be executed at the end of the chain as a fallback.

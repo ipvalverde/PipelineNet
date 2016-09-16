@@ -6,7 +6,6 @@ using System.Collections.Generic;
 namespace PipelineNet.Pipelines
 {
     public class Pipeline<TParameter> : IPipeline<TParameter>
-        where TParameter : class
     {
         private readonly IList<Type> _middlewareTypes;
         private readonly IMiddlewareResolver _middlewareResolver;

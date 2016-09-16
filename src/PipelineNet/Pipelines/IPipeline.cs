@@ -3,7 +3,6 @@
 namespace PipelineNet.Pipelines
 {
     public interface IPipeline<TParameter>
-        where TParameter : class
     {
         /// <summary>
         /// Adds a middleware type to be executed.

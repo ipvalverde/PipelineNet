@@ -6,8 +6,6 @@ using System.Collections.Generic;
 namespace PipelineNet.ChainsOfResponsibility
 {
     public class ResponsibilityChain<TParameter, TReturn> : IResponsibilityChain<TParameter, TReturn>
-        where TParameter : class
-        where TReturn : class
     {
         private readonly IList<Type> _middlewareTypes;
         private readonly IMiddlewareResolver _middlewareResolver;

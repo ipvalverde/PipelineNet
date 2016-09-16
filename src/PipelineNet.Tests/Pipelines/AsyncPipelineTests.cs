@@ -12,6 +12,7 @@ namespace PipelineNet.Tests.Pipelines
     [TestClass]
     public class AsyncPipelineTests
     {
+        #region Enum e parameter definition
         public enum Gender
         {
             Male,
@@ -27,7 +28,9 @@ namespace PipelineNet.Tests.Pipelines
 
             public int Level { get; set; }
         }
+        #endregion
 
+        #region Middleware definitions
         public class PersonWithEvenId : IAsyncMiddleware<PersonModel>
         {
             public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext)
@@ -69,6 +72,7 @@ namespace PipelineNet.Tests.Pipelines
                 await executeNext(context);
             }
         }
+        #endregion
 
         [TestMethod]
         public void Execute_RunSeveralMiddleware_SuccessfullyExecute()
