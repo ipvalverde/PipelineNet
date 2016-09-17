@@ -1,8 +1,13 @@
+# PipelineNet
+[![Build status](https://ci.appveyor.com/api/projects/status/3201jkm43b8iq85w?svg=true)](https://ci.appveyor.com/project/ipvalverde/pipelinenet)
+
+Pipeline net is a micro framework that helps you implement the pipeline and chain of responsibility patterns. With PipelineNet you can easily separate business logic and extend your application.
+Pipelines can be used to execute a series of middleware sequentially without expecting a return, while chains of responsibilities do the same thing but expecting a return. And you can do it all asynchronously too.
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [PipelineNet](#pipelinenet)
   - [Simple example](#simple-example)
   - [Pipeline vs Chain of responsibility](#pipeline-vs-chain-of-responsibility)
   - [Middleware](#middleware)
@@ -12,12 +17,6 @@
   - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-# PipelineNet
-[![Build status](https://ci.appveyor.com/api/projects/status/3201jkm43b8iq85w?svg=true)](https://ci.appveyor.com/project/ipvalverde/pipelinenet)
-
-Pipeline net is a micro framework that helps you implement the pipeline and chain of responsibility patterns. With PipelineNet you can easily separate business logic and extend your application.
-Pipelines can be used to execute a series of middleware sequentially without expecting a return, while chains of responsibilities do the same thing but expecting a return. And you can do it all asynchronously too.
 
 ## Simple example
 Just to check how easy it is to use PipelineNet, here is an example of exception handling using a chain of responsibility:
