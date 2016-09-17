@@ -50,11 +50,11 @@ public class ArgumentExceptionHandler : IMiddleware<Exception, bool>
 ```
 Now we create a chain of responsibility with the middleware:
 ```C#
-var exceptionHandlersChain = new ChainOfResponsibility<Exception, bool>(new ActivatorMiddlewareResolver())
+var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentExceptionHandler>();
 ```
-Now your instance of `ChainOfResponsibility` can be executed as many times as you want:
+Now your instance of `ResponsibilityChain` can be executed as many times as you want:
 ```C#
 // The following line will execute only the OutOfMemoryExceptionHandler, which is the first middleware.
 var result = exceptionHandlersChain.Execute(new OutOfMemoryException()); // result will be true
@@ -65,9 +65,9 @@ result = exceptionHandlersChain.Execute(new ArgumentExceptionHandler()); // resu
 // If no middleware matches returns a value, the default of the return type is returned, which in the case of 'bool' is false.
 result = exceptionHandlersChain.Execute(new InvalidOperationException()); // result will be false
 ```
-You can even define a fallback function that will gets executed after your entire chain:
+You can even define a fallback function that will be executed after your entire chain:
 ```C#
-var exceptionHandlersChain = new ChainOfResponsibility<Exception>(new ActivatorMiddlewareResolver())
+var exceptionHandlersChain = new ResponsibilityChain<Exception>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentExceptionHandler>()
     .Finally((parameter) =>
@@ -159,7 +159,7 @@ will replace the previous function defined.
 As we already have an example of a chain of responsibility, here is an example using the asynchronous implementation:
 If you want to, you can use the asynchronous version, using asynchronous middleware. Changing the instantiation to:
 ```C#
-var exceptionHandlersChain = new AsyncChainOfResponsibility<Exception>(new ActivatorMiddlewareResolver())
+var exceptionHandlersChain = new AsyncResponsibilityChain<Exception>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentExceptionHandler>()
     .Finally((ex) =>
