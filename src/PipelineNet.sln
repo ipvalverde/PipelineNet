@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipelineNet", "PipelineNet\PipelineNet.csproj", "{2EFFD720-A1CC-4F32-99F8-655BB1CC3632}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipelineNet.Tests", "PipelineNet.Tests\PipelineNet.Tests.csproj", "{2A06C563-CF29-4E80-AF27-094B5CE56CFF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipelineNet", "PipelineNet\PipelineNet.csproj", "{6EA45976-151B-4E47-8962-79F0F0DA1D1A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2EFFD720-A1CC-4F32-99F8-655BB1CC3632}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2EFFD720-A1CC-4F32-99F8-655BB1CC3632}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2EFFD720-A1CC-4F32-99F8-655BB1CC3632}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2EFFD720-A1CC-4F32-99F8-655BB1CC3632}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2A06C563-CF29-4E80-AF27-094B5CE56CFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2A06C563-CF29-4E80-AF27-094B5CE56CFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2A06C563-CF29-4E80-AF27-094B5CE56CFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2A06C563-CF29-4E80-AF27-094B5CE56CFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6EA45976-151B-4E47-8962-79F0F0DA1D1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EA45976-151B-4E47-8962-79F0F0DA1D1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EA45976-151B-4E47-8962-79F0F0DA1D1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6EA45976-151B-4E47-8962-79F0F0DA1D1A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
