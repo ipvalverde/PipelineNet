@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="ChainsOfResponsibility\AsyncResponsibilityChainTests.cs" />
     <Compile Include="ChainsOfResponsibility\ResponsibilityChainTests.cs" />
+    <Compile Include="Infrastructure\PipelineNetAssert.cs" />
     <Compile Include="Pipelines\AsyncPipelineTests.cs" />
     <Compile Include="Pipelines\PipelineTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
