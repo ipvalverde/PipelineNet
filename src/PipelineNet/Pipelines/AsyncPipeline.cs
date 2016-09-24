@@ -6,20 +6,11 @@ using System.Threading.Tasks;
 
 namespace PipelineNet.Pipelines
 {
-    public class AsyncPipeline<TParameter> : IAsyncPipeline<TParameter>
+    public class AsyncPipeline<TParameter> : BasePipeline<IAsyncMiddleware<TParameter>>, IAsyncPipeline<TParameter>
         where TParameter : class
     {
-        private readonly IList<Type> _middlewareTypes;
-        private readonly IMiddlewareResolver _middlewareResolver;
-
-        public AsyncPipeline(IMiddlewareResolver middlewareResolver)
-        {
-            if (middlewareResolver == null) throw new ArgumentNullException("middlewareResolver",
-                "An instance of IMiddlewareResolver must be provided. You can use ActivatorMiddlewareResolver.");
-
-            _middlewareResolver = middlewareResolver;
-            _middlewareTypes = new List<Type>();
-        }
+        public AsyncPipeline(IMiddlewareResolver middlewareResolver) : base(middlewareResolver)
+        {}
 
         /// <summary>
         /// Adds a middleware type to be executed.
@@ -29,7 +20,21 @@ namespace PipelineNet.Pipelines
         public IAsyncPipeline<TParameter> Add<TMiddleware>()
             where TMiddleware : IAsyncMiddleware<TParameter>
         {
-            _middlewareTypes.Add(typeof(TMiddleware));
+            MiddlewareTypes.Add(typeof(TMiddleware));
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a middleware type to be executed.
+        /// </summary>
+        /// <param name="middlewareType">The middleware type to be executed.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">Thrown if the <paramref name="middleType"/> is 
+        /// not an implementation of <see cref="IMiddleware{TParameter}"/>.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
+        public IAsyncPipeline<TParameter> Add(Type middlewareType)
+        {
+            base.AddMiddleware(middlewareType);
             return this;
         }
 
@@ -39,18 +44,18 @@ namespace PipelineNet.Pipelines
         /// <param name="parameter"></param>
         public async Task Execute(TParameter parameter)
         {
-            if (_middlewareTypes.Count == 0)
+            if (MiddlewareTypes.Count == 0)
                 return;
 
             int index = 0;
             Func<TParameter, Task> action = null;
             action = async (param) =>
             {
-                var type = _middlewareTypes[index];
-                var firstMiddleware = (IAsyncMiddleware<TParameter>)_middlewareResolver.Resolve(type);
+                var type = MiddlewareTypes[index];
+                var firstMiddleware = (IAsyncMiddleware<TParameter>)MiddlewareResolver.Resolve(type);
 
                 index++;
-                if (index == _middlewareTypes.Count)
+                if (index == MiddlewareTypes.Count)
                     action = async (p) => { };
 
                 await firstMiddleware.Run(param, action);

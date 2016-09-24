@@ -2,6 +2,7 @@
 using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
 using PipelineNet.Pipelines;
+using PipelineNet.Tests.Infrastructure;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -75,7 +76,7 @@ namespace PipelineNet.Tests.Pipelines
         #endregion
 
         [TestMethod]
-        public void Execute_RunSeveralMiddleware_SuccessfullyExecute()
+        public async Task Execute_RunSeveralMiddleware_SuccessfullyExecute()
         {
             var pipeline = new AsyncPipeline<PersonModel>(new ActivatorMiddlewareResolver())
                 .Add<PersonWithEvenId>()
@@ -89,14 +90,14 @@ namespace PipelineNet.Tests.Pipelines
                 Name = "this_is_my_email@servername.js"
             };
 
-            pipeline.Execute(personModel);
+            await pipeline.Execute(personModel);
 
             // Check if the level of 'personModel' is 3, which is configured by 'PersonWithEmailName' middleware.
             Assert.AreEqual(3, personModel.Level);
         }
 
         [TestMethod]
-        public void Execute_RunSamePipelineTwice_SuccessfullyExecute()
+        public async Task Execute_RunSamePipelineTwice_SuccessfullyExecute()
         {
             var pipeline = new AsyncPipeline<PersonModel>(new ActivatorMiddlewareResolver())
                 .Add<PersonWithEvenId>()
@@ -110,7 +111,7 @@ namespace PipelineNet.Tests.Pipelines
                 Name = "this_is_my_email@servername.js"
             };
 
-            pipeline.Execute(personModel);
+            await pipeline.Execute(personModel);
 
             // Check if the level of 'personModel' is 3, which is configured by 'PersonWithEmailName' middleware.
             Assert.AreEqual(3, personModel.Level);
@@ -128,6 +129,40 @@ namespace PipelineNet.Tests.Pipelines
 
             // Check if the level of 'personModel' is 4, which is configured by 'PersonWithGenderProperty' middleware.
             Assert.AreEqual(4, personModel.Level);
+        }
+
+        [TestMethod]
+        public async Task Execute_RunSeveralMiddlewareWithTwoBeingDynamiccalyAdded_SuccessfullyExecute()
+        {
+            var pipeline = new AsyncPipeline<PersonModel>(new ActivatorMiddlewareResolver())
+                .Add<PersonWithEvenId>()
+                .Add(typeof(PersonWithOddId))
+                .Add<PersonWithEmailName>()
+                .Add(typeof(PersonWithGenderProperty));
+
+            // This person model has a gender, so the last middleware will be the one handling the input.
+            var personModel = new PersonModel
+            {
+                Gender = Gender.Female
+            };
+
+            await pipeline.Execute(personModel);
+
+            // Check if the level of 'personModel' is 4, which is configured by 'PersonWithGenderProperty' middleware.
+            Assert.AreEqual(4, personModel.Level);
+        }
+
+        /// <summary>
+        /// Tests the <see cref="AsyncPipeline{TParameter}.Add(Type)"/> method.
+        /// </summary>
+        [TestMethod]
+        public void Add_AddTypeThatIsNotAMiddleware_ThrowsException()
+        {
+            var pipeline = new AsyncPipeline<PersonModel>(new ActivatorMiddlewareResolver());
+            PipelineNetAssert.ThrowsException<ArgumentException>(() =>
+            {
+                pipeline.Add(typeof(AsyncPipelineTests));
+            });
         }
     }
 }

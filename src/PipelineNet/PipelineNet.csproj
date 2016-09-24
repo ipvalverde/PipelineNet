@@ -50,6 +50,7 @@
     <Compile Include="Middleware\IMiddleware.cs" />
     <Compile Include="Middleware\IMiddleware.WithReturn.cs" />
     <Compile Include="Pipelines\AsyncPipeline.cs" />
+    <Compile Include="Pipelines\BasePipeline.cs" />
     <Compile Include="Pipelines\IAsyncPipeline.cs" />
     <Compile Include="Pipelines\IPipeline.cs" />
     <Compile Include="Pipelines\Pipeline.cs" />
