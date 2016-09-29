@@ -133,7 +133,7 @@ nuget:
   disable_publish_on_pr: true
 test: off  
 artifacts:  
-- path: .\artifacts\**\*.nupkg
+- path: PipelineNet.nupkg
   name: NuGet
 deploy:  
 - provider: NuGet
