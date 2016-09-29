@@ -57,7 +57,7 @@ namespace PipelineNet.ChainsOfResponsibility
                 // the "next" function is assigned to the finally function or a 
                 // default empty function.
                 if (index == _middlewareTypes.Count)
-                    func = this._finallyFunc ?? (async (p) => default(TReturn));
+                    func = this._finallyFunc ?? ((p) => Task.FromResult(default(TReturn)));
 
                 return middleware.Run(param, func);
             };

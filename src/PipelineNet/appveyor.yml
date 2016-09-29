@@ -1,0 +1,145 @@
+
+ Andrew Lock | .NET Escapades avatar
+Andrew Lock
+.Net Escapades
+
+Hi, my name is Andrew, or ‘Sock’ to most people. This blog is where I share my experiences as I journey into ASP.NET Core.
+Home
+ 
+About
+ 
+Subscribe
+ 
+ 
+ 
+ 
+ 
+Andrew Lock | .NET Escapades
+Home
+ 
+About
+ 
+Subscribe
+ 
+ 
+ 
+ 
+ 
+4 months ago ~ 13 min read.
+Publishing your first .NET Core NuGet package with AppVeyor and MyGet
+Share on:
+    
+In this post I'm going to describe the process for beginners to go from 'Code in Github' to 'Package on NuGet'. It is very much inspired by (read: copied from) Jimmy Bogard's post on his OSS CI/CD pipeline, which I really recommend checking out as he explains the whole process.
+
+I'm going to assume you've been building a .NET Core library and you have all your code on GitHub. I'll assume you have been building and testing locally using dotnet build and dotnet test, whether in Visual Studio or Visual Studio Code. Now you're at a point where you want to push your packages to NuGet, but you don't want to go through the laborious process of uploading your packages by hand. This is where the fun of CI comes in!
+
+As we're going to be running our CI/CD build using AppVeyor our pipeline is going to be Windows only at this stage; I'll cover running CI on Linux in a later post.
+
+Updating your build process
+
+The first step to having a dependable CI pipeline is to make sure you have a dependable build script. You want to be sure that when you build locally on your machine, you will consistently get the same results. Similarly, you want to be sure that your build server is using the same build process, and so is equally consistent.
+
+To give this guarantee, we will use a build script that lives as part of the project source control. It is almost completely taken from Jimmy Bogard's MediatR library, and is a powershell script that performs 5 operations:
+
+Clean any previous build artifacts
+Restore necessary dependencies
+Build the project
+Run tests
+Package project for NuGet
+If you are following along with your own project, the first thing you'll want to do is create a branch, e.g. configure_ci, in your repo for your CI build setup:
+
+> git checkout master
+> git pull origin
+> git checkout -b configure_ci
+Next, update the project.json of your .NET Cor library to use SemVer versioning if you are not already, with a variable build number. Also add any packOptions settings for your NuGet packages here, e.g.:
+
+{
+  "version": "0.1.0-beta-*",
+  "packOptions": {
+    "licenseUrl": "https://github.com/andrewlock/NetEscapades.AspNetCore.SecurityHeaders/blob/master/LICENSE",
+    "projectUrl": "https://github.com/andrewlock/NetEscapades.AspNetCore.SecurityHeaders/",
+  }
+Now we add the build script itself Build.ps1 in the root of our repo:
+
+if(Test-Path .\artifacts) { Remove-Item .\artifacts -Force -Recurse }
+
+EnsurePsbuildInstalled
+
+exec { & dotnet restore }
+
+Invoke-MSBuild
+
+$revision = @{ $true = $env:APPVEYOR_BUILD_NUMBER; $false = 1 }[$env:APPVEYOR_BUILD_NUMBER -ne $NULL];
+$revision = "{0:D4}" -f [convert]::ToInt32($revision, 10)
+
+exec { & dotnet test .\test\YOUR_TEST_PROJECT_NAME -c Release }
+
+exec { & dotnet pack .\src\YOUR_PROJECT_NAME -c Release -o .\artifacts --version-suffix=$revision }  
+Note that the first half of the script is being ommitted here for brevity - the definition of EnsurePsBuildInstalled and exec is included in the full script found at the bottom of this post.
+
+The script pretty much just works through the 5 steps we outlined above, and adds an auto-incrementing build number to any packages produced. To run your build process you just have to run the powershell script .\Build.ps1 and it will clean, build, test and package your project. Be sure to insert your main and test project names in the YOUR_PROJECT_NAME placeholders at the bottom of the file.
+
+Note: when you first run the script on your machine, psbuild is installed if it is not already found. When I first ran it, I received an error: Exception calling "DownloadString" with "1" argument(s): "The remote name could not be resolved: 'raw.githubusercontent.com'". If this happens to you, the script failed to connect to the interwebs to download psbuild. Resetting my network adapter fixed the issue.
+
+Hopefully at this stage you have a successful build process, all your tests pass and your .\artifacts folder contains your nupkg files:
+
+Artifacts folder output after successful build
+
+With step 1 down, just commit those files and we'll move on to the fun bits!
+
+> git add .
+> git commit -m "Add build scripts"
+Signing up to MyGet
+
+In order to be able to publish our packages, we need somewhere to publish our packages to. You could just push all your packages to NuGet, but you don't necessarily want all your pre-release and CI build packages being pushed up for everyone to immediately pull down when they may or may not be ready.
+
+The suggested alternative is to use MyGet as your hosted package server for CI. For that you will need to signup for a free (for open source) account at https://www.myget.org/.
+
+After creating an account, you will be prompted to create a new feed, providing a unique url and a description. I used andrewlock-ci as the feed name:
+
+Create new MyGet feed
+
+After creating your feed, navigate to the details page, in my case https://www.myget.org/feed/Details/andrewlock-ci. Here you can see the NuGet feed URLs and your API key. Take a note of the v2 feed url and your API key as you'll need them later:
+
+MyGet feed details
+
+Signing up for NuGet
+
+If you haven't already, you will probably want to sign up for an account on NuGet so you can publish your package for others to consume. Again free, sign up at https://www.nuget.org and create your account, going through the usual email verification rigmarole.
+
+Once you're in, navigate to your account page and again make a note of the API key as we'll need it to allow AppVeyor to publish for us directly.
+
+NuGet feed details showing API key location
+
+Setting up AppVeyor
+
+We're getting there, just a couple more steps. In order to hook up our GitHub repo with AppVeyor and to configure our CI/CD, we first need to create an account with them.
+
+Visit https://www.appveyor.com/ and sign up for an account (free for open source projects) - you can create an account with them or use any of a number of OAuth accounts.
+
+Once you are all signed up, you should be taken to the 'New Project' screen. You can add projects from lots of different sources, GitHub, BitBucket, VS Online, directly from Git etc. Select GitHub, choose the project you are configuring, and authorise the app to hook in to your repository:
+
+Select a repo to connect to AppVeyor
+
+We are going to configure AppVeyor to use WebHooks to listen for activity on our repo. In particular, we are going to configure the following rules (again, following Jimmy Bogard's lead here):
+
+version: '{build}'  
+pull_requests:  
+  do_not_increment_build_number: true
+branches:  
+  only:
+  - master
+nuget:  
+  disable_publish_on_pr: true
+test: off  
+artifacts:  
+- path: .\artifacts\**\*.nupkg
+  name: NuGet
+deploy:  
+- provider: NuGet
+  name: production
+  api_key:
+    secure: V3gkcKqvZqh4Exj3EXyxBAtNNClZglOQJcUMriZefEG1+UiL/6VlJ6azfe5Gh87h
+  on:
+    branch: master
+    appveyor_repo_tag: true

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>PipelineNet</id>
+    <version>$version$</version>
+    <description>A micro framework that helps you implement pipeline and chain of responsibility patterns.</description>
+    <authors>Israel Valverde</authors>
+    <owners>ipvalverde</owners>
+    <licenseUrl>https://github.com/ipvalverde/PipelineNet/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/ipvalverde/PipelineNet</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <releaseNotes>$releaseNotes</releaseNotes>
+    <copyright>Copyright ©2016 Israel Valverde</copyright>
+    <tags>Pipeline .NetCore Portable Chain Responsibility ChainOfResponsibility Core NetStandard</tags>
+  </metadata>
+  <files>
+    <file src="bin\Release\PipelineNet.dll" target="lib\netstandard1.1\PipelineNet.dll" />
+    <file src="bin\Release\PipelineNet.XML" target="lib\netstandard1.1\PipelineNet.XML" />
+  </files>
+</package>
