@@ -2,6 +2,7 @@
 using PipelineNet.ChainsOfResponsibility;
 using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
+using PipelineNet.Tests.Infrastructure;
 using System;
 
 namespace PipelineNet.Tests.ChainsOfResponsibility
@@ -110,7 +111,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
             var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
                 .Chain<UnavailableResourcesExceptionHandler>()
-                .Chain<InvalidateDataExceptionHandler>()
+                .Chain(typeof(InvalidateDataExceptionHandler))
                 .Chain<MyExceptionHandler>()
                 .Finally((ex) =>
                 {
@@ -127,6 +128,19 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             Assert.IsTrue(result);
 
             Assert.AreEqual(ExceptionSource, exception.Source);
+        }
+
+        /// <summary>
+        /// Tests the <see cref="ResponsibilityChain{TParameter, TReturn}.Chain(Type)"/> method.
+        /// </summary>
+        [TestMethod]
+        public void Chain_AddTypeThatIsNotAMiddleware_ThrowsException()
+        {
+            var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver());
+            PipelineNetAssert.ThrowsException<ArgumentException>(() =>
+            {
+                responsibilityChain.Chain(typeof(ResponsibilityChainTests));
+            });
         }
     }
 }

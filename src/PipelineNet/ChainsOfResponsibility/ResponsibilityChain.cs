@@ -1,23 +1,25 @@
 ﻿using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
 using System;
-using System.Collections.Generic;
 
 namespace PipelineNet.ChainsOfResponsibility
 {
-    public class ResponsibilityChain<TParameter, TReturn> : IResponsibilityChain<TParameter, TReturn>
+    /// <summary>
+    /// Defines the chain of responsibility.
+    /// </summary>
+    /// <typeparam name="TParameter">The input type for the chain.</typeparam>
+    /// <typeparam name="TReturn">The return type of the chain.</typeparam>
+    public class ResponsibilityChain<TParameter, TReturn> : BaseMiddlewareFlow<IMiddleware<TParameter, TReturn>>,
+        IResponsibilityChain<TParameter, TReturn>
     {
-        private readonly IList<Type> _middlewareTypes;
-        private readonly IMiddlewareResolver _middlewareResolver;
         private Func<TParameter, TReturn> _finallyFunc;
 
-        public ResponsibilityChain(IMiddlewareResolver middlewareResolver)
+        /// <summary>
+        /// Creates a new chain of responsibility.
+        /// </summary>
+        /// <param name="middlewareResolver"></param>
+        public ResponsibilityChain(IMiddlewareResolver middlewareResolver) : base(middlewareResolver)
         {
-            if (middlewareResolver == null) throw new ArgumentNullException("middlewareResolver",
-                "An instance of IMiddlewareResolver must be provided. You can use ActivatorMiddlewareResolver.");
-
-            _middlewareResolver = middlewareResolver;
-            _middlewareTypes = new List<Type>();
         }
 
         /// <summary>
@@ -34,7 +36,7 @@ namespace PipelineNet.ChainsOfResponsibility
         }
 
         /// <summary>
-        /// Chain a new middleware to the chain of responsibility.
+        /// Chains a new middleware to the chain of responsibility.
         /// Middleware will be executed in the same order they are added.
         /// </summary>
         /// <typeparam name="TMiddleware">The new middleware being added.</typeparam>
@@ -42,7 +44,22 @@ namespace PipelineNet.ChainsOfResponsibility
         public IResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>()
             where TMiddleware : IMiddleware<TParameter, TReturn>
         {
-            _middlewareTypes.Add(typeof(TMiddleware));
+            MiddlewareTypes.Add(typeof(TMiddleware));
+            return this;
+        }
+
+        /// <summary>
+        /// Chains a new middleware type to the chain of responsibility.
+        /// Middleware will be executed in the same order they are added.
+        /// </summary>
+        /// <param name="middlewareType">The middleware type to be executed.</param>
+        /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
+        /// not an implementation of <see cref="IAsyncMiddleware{TParameter, TReturn}"/>.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
+        /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
+        public IResponsibilityChain<TParameter, TReturn> Chain(Type middlewareType)
+        {
+            base.AddMiddleware(middlewareType);
             return this;
         }
 
@@ -52,21 +69,21 @@ namespace PipelineNet.ChainsOfResponsibility
         /// <param name="parameter"></param>
         public TReturn Execute(TParameter parameter)
         {
-            if (_middlewareTypes.Count == 0)
+            if (MiddlewareTypes.Count == 0)
                 return default(TReturn);
 
             int index = 0;
             Func<TParameter, TReturn> func = null;
             func = (param) =>
             {
-                var type = _middlewareTypes[index];
-                var middleware = (IMiddleware<TParameter, TReturn>)_middlewareResolver.Resolve(type);
+                var type = MiddlewareTypes[index];
+                var middleware = (IMiddleware<TParameter, TReturn>)MiddlewareResolver.Resolve(type);
 
                 index++;
                 // If the current instance of middleware is the last one in the list,
                 // the "next" function is assigned to the finally function or a 
                 // default empty function.
-                if (index == _middlewareTypes.Count)
+                if (index == MiddlewareTypes.Count)
                     func = this._finallyFunc ?? ((p) => default(TReturn));
 
                 return middleware.Run(param, func);

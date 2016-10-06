@@ -3,6 +3,11 @@ using System;
 
 namespace PipelineNet.ChainsOfResponsibility
 {
+    /// <summary>
+    /// Defines the chain of responsibility.
+    /// </summary>
+    /// <typeparam name="TParameter">The input type for the chain.</typeparam>
+    /// <typeparam name="TReturn">The return type of the chain.</typeparam>
     public interface IResponsibilityChain<TParameter, TReturn>
     {
         /// <summary>
@@ -15,7 +20,7 @@ namespace PipelineNet.ChainsOfResponsibility
         IResponsibilityChain<TParameter, TReturn> Finally(Func<TParameter, TReturn> finallyFunc);
 
         /// <summary>
-        /// Chain a new middleware to the chain of responsibility.
+        /// Chains a new middleware to the chain of responsibility.
         /// Middleware will be executed in the same order they are added.
         /// </summary>
         /// <typeparam name="TMiddleware">The new middleware being added.</typeparam>
@@ -24,7 +29,18 @@ namespace PipelineNet.ChainsOfResponsibility
             where TMiddleware : IMiddleware<TParameter, TReturn>;
 
         /// <summary>
-        /// Execute the configured chain of responsibility.
+        /// Chains a new middleware type to the chain of responsibility.
+        /// Middleware will be executed in the same order they are added.
+        /// </summary>
+        /// <param name="middlewareType">The middleware type to be executed.</param>
+        /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
+        /// not an implementation of <see cref="IAsyncMiddleware{TParameter, TReturn}"/>.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
+        /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
+        IResponsibilityChain<TParameter, TReturn> Chain(Type middlewareType);
+
+        /// <summary>
+        /// Executes the configured chain of responsibility.
         /// </summary>
         /// <param name="parameter"></param>
         TReturn Execute(TParameter parameter);

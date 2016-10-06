@@ -1,19 +1,16 @@
 ﻿using PipelineNet.MiddlewareResolver;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace PipelineNet.Pipelines
+namespace PipelineNet
 {
-    public abstract class BasePipeline<TMiddleware>
+    public abstract class BaseMiddlewareFlow<TMiddleware>
     {
         protected IList<Type> MiddlewareTypes { get; private set; }
         protected IMiddlewareResolver MiddlewareResolver { get; private set; }
 
-        protected BasePipeline(IMiddlewareResolver middlewareResolver)
+        internal BaseMiddlewareFlow(IMiddlewareResolver middlewareResolver)
         {
             if (middlewareResolver == null) throw new ArgumentNullException("middlewareResolver",
                 "An instance of IMiddlewareResolver must be provided. You can use ActivatorMiddlewareResolver.");
@@ -28,11 +25,12 @@ namespace PipelineNet.Pipelines
         private static readonly TypeInfo MiddlewareTypeInfo = typeof(TMiddleware).GetTypeInfo();
 
         /// <summary>
-        /// Adds the given middleware type to the list of middleware types.
+        /// Adds a new middleware type to the internal list of types.
+        /// Middleware will be executed in the same order they are added.
         /// </summary>
         /// <param name="middlewareType">The middleware type to be executed.</param>
-        /// <exception cref="ArgumentException">Thrown if the <paramref name="middleType"/> is 
-        /// not an implementation of <see cref="IMiddleware{TParameter}"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
+        /// not an implementation of <typeparamref name="TMiddleware"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
         protected void AddMiddleware(Type middlewareType)
         {

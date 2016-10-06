@@ -1,8 +1,6 @@
 ﻿using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
 using System;
-using System.Reflection;
-using System.Collections.Generic;
 
 namespace PipelineNet.Pipelines
 {
@@ -11,7 +9,7 @@ namespace PipelineNet.Pipelines
     /// The middleware are executed in the same order they are added.
     /// </summary>
     /// <typeparam name="TParameter">The type that will be the input for all the middleware.</typeparam>
-    public class Pipeline<TParameter> : BasePipeline<IMiddleware<TParameter>>, IPipeline<TParameter>
+    public class Pipeline<TParameter> : BaseMiddlewareFlow<IMiddleware<TParameter>>, IPipeline<TParameter>
     {
         /// <summary>
         /// Creates a new instance of Pipeline.
@@ -37,7 +35,7 @@ namespace PipelineNet.Pipelines
         /// </summary>
         /// <param name="middlewareType">The middleware type to be executed.</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentException">Thrown if the <paramref name="middleType"/> is 
+        /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
         /// not an implementation of <see cref="IMiddleware{TParameter}"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
         public IPipeline<TParameter> Add(Type middlewareType)
