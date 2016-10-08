@@ -84,7 +84,7 @@ namespace PipelineNet.ChainsOfResponsibility
         /// A chain can only have one finally function. Calling this method more
         /// a second time will just replace the existing finally <see cref="Func{TParameter, TResult}<"/>.
         /// </summary>
-        /// <param name="finallyFunc">The <see cref="Func{TParameter, Task{TResult}}"/> that will be execute at the end of chain.</param>
+        /// <param name="finallyFunc">The function that will be execute at the end of chain.</param>
         /// <returns>The current instance of <see cref="IAsyncResponsibilityChain{TParameter, TReturn}"/>.</returns>
         public IAsyncResponsibilityChain<TParameter, TReturn> Finally(Func<TParameter, Task<TReturn>> finallyFunc)
         {
