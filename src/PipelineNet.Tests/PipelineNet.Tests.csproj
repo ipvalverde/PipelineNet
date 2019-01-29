@@ -60,7 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PipelineNet\PipelineNet.csproj">
-      <Project>{2effd720-a1cc-4f32-99f8-655bb1cc3632}</Project>
+      <Project>{1308eef1-a460-4e1b-8acc-3f913010d7f1}</Project>
       <Name>PipelineNet</Name>
     </ProjectReference>
   </ItemGroup>

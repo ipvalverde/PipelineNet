@@ -12,8 +12,10 @@ namespace PipelineNet
 
         internal BaseMiddlewareFlow(IMiddlewareResolver middlewareResolver)
         {
-            MiddlewareResolver = middlewareResolver ?? throw new ArgumentNullException("middlewareResolver",
+            if (middlewareResolver == null) throw new ArgumentNullException("middlewareResolver",
                 "An instance of IMiddlewareResolver must be provided. You can use ActivatorMiddlewareResolver.");
+
+            MiddlewareResolver = middlewareResolver;
             MiddlewareTypes = new List<Type>();
         }
 
@@ -37,7 +39,7 @@ namespace PipelineNet
             bool isAssignableFromMiddleware = MiddlewareTypeInfo.IsAssignableFrom(middlewareType.GetTypeInfo());
             if (!isAssignableFromMiddleware)
                 throw new ArgumentException(
-                    $"The middleware type must implement \"{typeof(TMiddleware)}\".");
+                    string.Format("The middleware type must implement \"{0}\".", typeof(TMiddleware)));
 
             this.MiddlewareTypes.Add(middlewareType);
         }
