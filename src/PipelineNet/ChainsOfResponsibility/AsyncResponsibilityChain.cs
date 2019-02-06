@@ -1,7 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-using PipelineNet.Middleware;
+﻿using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
+using System;
+using System.Threading.Tasks;
 
 namespace PipelineNet.ChainsOfResponsibility
 {

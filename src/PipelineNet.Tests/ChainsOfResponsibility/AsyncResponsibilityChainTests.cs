@@ -25,6 +25,30 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
         #endregion
 
         #region Middleware definitions
+        public class SyncReplaceNewLineMiddleware : IAsyncMiddleware<string, string>
+        {
+            public Task<string> Run(string input, Func<string, Task<string>> executeNext)
+            {
+                var newLineReplaced = input.Replace("\n", " ");
+
+                var nextMiddleware = executeNext(newLineReplaced);
+                var result = nextMiddleware.Result;
+                return Task.FromResult(result);
+            }
+        }
+
+        public class SyncTrimMiddleware : IAsyncMiddleware<string, string>
+        {
+            public Task<string> Run(string input, Func<string, Task<string>> executeNext)
+            {
+                var trimmedString = input.Trim();
+
+                var nextMiddleware = executeNext(trimmedString);
+                var result = nextMiddleware.Result;
+                return Task.FromResult(result);
+            }
+        }
+
         public class UnavailableResourcesExceptionHandler : IAsyncMiddleware<Exception, bool>
         {
             public async Task<bool> Run(Exception exception, Func<Exception, Task<bool>> executeNext)
@@ -142,6 +166,25 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             {
                 responsibilityChain.Chain(typeof(ResponsibilityChainTests));
             });
+        }
+
+
+
+        /// <summary>
+        /// Try to generate a deadlock in synchronous middleware.
+        /// </summary>
+        [TestMethod]
+        public void Execute_SynchronousChainOfResponsibility_SuccessfullyExecute()
+        {
+            var responsibilityChain = new AsyncResponsibilityChain<string, string>(new ActivatorMiddlewareResolver())
+                .Chain<SyncReplaceNewLineMiddleware>()
+                .Chain<SyncTrimMiddleware>()
+                .Finally(input => Task.FromResult(input));
+
+            var resultTask = responsibilityChain.Execute("  Test\nwith spaces\n and new lines \n ");
+            var result = resultTask.Result;
+
+            Assert.AreEqual("Test with spaces  and new lines", result);
         }
     }
 }
