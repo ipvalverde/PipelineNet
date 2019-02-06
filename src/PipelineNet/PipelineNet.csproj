@@ -1,7 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard1.1</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Label="MainGroup">
+    <Version>0.0.2</Version>
+    <PackageId>PipelineNet</PackageId>
+    <PackageTitle>PipelineNet</PackageTitle>
+    <Authors>Israel Valverde</Authors>
+    <Description>A micro framework that helps you implement pipeline and chain of responsibility patterns.</Description>
+    <PackageProjectUrl>https://github.com/ipvalverde/PipelineNet</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/ipvalverde/PipelineNet/blob/master/LICENSE</PackageLicenseUrl>
+    <Copyright>Copyright © Israel Valverde</Copyright>
+    <PackageTags>Pipeline .NetCore Portable Chain Responsibility ChainOfResponsibility Core NetStandard</PackageTags>
+    <PackageReleaseNotes>- Updating csproj file format;
+    - Adding support for blocking calls in asp.net and UI threads;</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
