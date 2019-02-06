@@ -76,7 +76,7 @@ namespace PipelineNet.ChainsOfResponsibility
                 return middleware.Run(param, func);
             };
 
-            return await func(parameter);
+            return await func(parameter).ConfigureAwait(false);
         }
 
         /// <summary>

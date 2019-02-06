@@ -57,10 +57,10 @@ namespace PipelineNet.Pipelines
                 if (index == MiddlewareTypes.Count)
                     action = (p) => Task.CompletedTask;
 
-                await firstMiddleware.Run(param, action);
+                await firstMiddleware.Run(param, action).ConfigureAwait(false);
             };
 
-            await action(parameter);
+            await action(parameter).ConfigureAwait(false);
         }
     }
 }
