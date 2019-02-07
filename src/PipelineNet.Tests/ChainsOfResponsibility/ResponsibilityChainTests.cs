@@ -1,13 +1,11 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PipelineNet.ChainsOfResponsibility;
+﻿using PipelineNet.ChainsOfResponsibility;
 using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
-using PipelineNet.Tests.Infrastructure;
 using System;
+using Xunit;
 
 namespace PipelineNet.Tests.ChainsOfResponsibility
 {
-    [TestClass]
     public class ResponsibilityChainTests
     {
         #region Parameter definitions
@@ -67,7 +65,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
         }
         #endregion
 
-        [TestMethod]
+        [Fact]
         public void Execute_CreateChainOfMiddlewareToHandleException_TheRightMiddleHandlesTheException()
         {
             var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
@@ -81,13 +79,13 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             var result = responsibilityChain.Execute(invalidException);
 
             // Check if the given exception was handled
-            Assert.IsTrue(result);
+            Assert.True(result);
 
             // Check if the correct handler handled the exception.
-            Assert.AreEqual(typeof(InvalidateDataExceptionHandler).Name, invalidException.HandlerName);
+            Assert.Equal(typeof(InvalidateDataExceptionHandler).Name, invalidException.HandlerName);
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute_ChainOfMiddlewareThatDoesNotHandleTheException_ChainReturnsDefaultValue()
         {
             var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
@@ -101,10 +99,10 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             // The result should be the default for 'bool'.
             var result = responsibilityChain.Execute(excception);
 
-            Assert.AreEqual(default(bool), result);
+            Assert.Equal(default(bool), result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute_ChainOfMiddlewareWithFinallyFunc_FinallyFuncIsExecuted()
         {
             const string ExceptionSource = "EXCEPTION_SOURCE";
@@ -125,19 +123,19 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             // The result should true, since the finally function will be executed.
             var result = responsibilityChain.Execute(exception);
 
-            Assert.IsTrue(result);
+            Assert.True(result);
 
-            Assert.AreEqual(ExceptionSource, exception.Source);
+            Assert.Equal(ExceptionSource, exception.Source);
         }
 
         /// <summary>
         /// Tests the <see cref="ResponsibilityChain{TParameter, TReturn}.Chain(Type)"/> method.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Chain_AddTypeThatIsNotAMiddleware_ThrowsException()
         {
             var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver());
-            PipelineNetAssert.ThrowsException<ArgumentException>(() =>
+            Assert.Throws<ArgumentException>(() =>
             {
                 responsibilityChain.Chain(typeof(ResponsibilityChainTests));
             });

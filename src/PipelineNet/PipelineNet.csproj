@@ -15,7 +15,7 @@
     <Copyright>Copyright © Israel Valverde</Copyright>
     <PackageTags>Pipeline .NetCore Portable Chain Responsibility ChainOfResponsibility Core NetStandard</PackageTags>
     <PackageReleaseNotes>- Updating csproj file format;
-    - Adding support for blocking calls in asp.net and UI threads;</PackageReleaseNotes>
+- Adding support for blocking calls in asp.net and UI threads;</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
