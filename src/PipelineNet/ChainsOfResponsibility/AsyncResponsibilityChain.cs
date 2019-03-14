@@ -1,7 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-using PipelineNet.Middleware;
+﻿using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
+using System;
+using System.Threading.Tasks;
 
 namespace PipelineNet.ChainsOfResponsibility
 {
@@ -76,7 +76,7 @@ namespace PipelineNet.ChainsOfResponsibility
                 return middleware.Run(param, func);
             };
 
-            return await func(parameter);
+            return await func(parameter).ConfigureAwait(false);
         }
 
         /// <summary>

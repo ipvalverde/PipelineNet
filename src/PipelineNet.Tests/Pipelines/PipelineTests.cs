@@ -1,14 +1,12 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PipelineNet.Middleware;
-using System.Text.RegularExpressions;
-using PipelineNet.Pipelines;
+﻿using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
-using PipelineNet.Tests.Infrastructure;
+using PipelineNet.Pipelines;
+using System;
+using System.Text.RegularExpressions;
+using Xunit;
 
 namespace PipelineNet.Tests.Pipeline
 {
-    [TestClass]
     public class PipelineTests
     {
         #region Parameter definitions
@@ -71,7 +69,7 @@ namespace PipelineNet.Tests.Pipeline
         }
         #endregion
 
-        [TestMethod]
+        [Fact]
         public void Execute_RunSeveralMiddleware_SuccessfullyExecute()
         {
             var pipeline = new Pipeline<PersonModel>(new ActivatorMiddlewareResolver())
@@ -89,10 +87,10 @@ namespace PipelineNet.Tests.Pipeline
             pipeline.Execute(personModel);
 
             // Check if the level of 'personModel' is 3, which is configured by 'PersonWithEmailName' middleware.
-            Assert.AreEqual(3, personModel.Level);
+            Assert.Equal(3, personModel.Level);
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute_RunSamePipelineTwice_SuccessfullyExecute()
         {
             var pipeline = new Pipeline<PersonModel>(new ActivatorMiddlewareResolver())
@@ -110,7 +108,7 @@ namespace PipelineNet.Tests.Pipeline
             pipeline.Execute(personModel);
 
             // Check if the level of 'personModel' is 3, which is configured by 'PersonWithEmailName' middleware.
-            Assert.AreEqual(3, personModel.Level);
+            Assert.Equal(3, personModel.Level);
 
 
             // Creates a new instance with a 'Gender' property. The 'PersonWithGenderProperty'
@@ -124,10 +122,10 @@ namespace PipelineNet.Tests.Pipeline
             pipeline.Execute(personModel);
 
             // Check if the level of 'personModel' is 4, which is configured by 'PersonWithGenderProperty' middleware.
-            Assert.AreEqual(4, personModel.Level);
+            Assert.Equal(4, personModel.Level);
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute_RunSeveralMiddlewareWithTwoBeingDynamiccalyAdded_SuccessfullyExecute()
         {
             var pipeline = new Pipeline<PersonModel>(new ActivatorMiddlewareResolver())
@@ -145,17 +143,17 @@ namespace PipelineNet.Tests.Pipeline
             pipeline.Execute(personModel);
 
             // Check if the level of 'personModel' is 4, which is configured by 'PersonWithGenderProperty' middleware.
-            Assert.AreEqual(4, personModel.Level);
+            Assert.Equal(4, personModel.Level);
         }
 
         /// <summary>
         /// Tests the <see cref="Pipeline{TParameter}.Add(Type)"/> method.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Add_AddTypeThatIsNotAMiddleware_ThrowsException()
         {
             var pipeline = new Pipeline<PersonModel>(new ActivatorMiddlewareResolver());
-            PipelineNetAssert.ThrowsException<ArgumentException>(() =>
+            Assert.Throws<ArgumentException>(() =>
             {
                 pipeline.Add(typeof(PipelineTests));
             });

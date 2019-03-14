@@ -1,14 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PipelineNet.ChainsOfResponsibility;
+﻿using PipelineNet.ChainsOfResponsibility;
 using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
-using PipelineNet.Tests.Infrastructure;
 using System;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace PipelineNet.Tests.ChainsOfResponsibility
 {
-    [TestClass]
     public class AsyncResponsibilityChainTests
     {
         #region Parameter definitions
@@ -25,6 +23,30 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
         #endregion
 
         #region Middleware definitions
+        public class SyncReplaceNewLineMiddleware : IAsyncMiddleware<string, string>
+        {
+            public Task<string> Run(string input, Func<string, Task<string>> executeNext)
+            {
+                var newLineReplaced = input.Replace("\n", " ");
+
+                var nextMiddleware = executeNext(newLineReplaced);
+                var result = nextMiddleware.Result;
+                return Task.FromResult(result);
+            }
+        }
+
+        public class SyncTrimMiddleware : IAsyncMiddleware<string, string>
+        {
+            public Task<string> Run(string input, Func<string, Task<string>> executeNext)
+            {
+                var trimmedString = input.Trim();
+
+                var nextMiddleware = executeNext(trimmedString);
+                var result = nextMiddleware.Result;
+                return Task.FromResult(result);
+            }
+        }
+
         public class UnavailableResourcesExceptionHandler : IAsyncMiddleware<Exception, bool>
         {
             public async Task<bool> Run(Exception exception, Func<Exception, Task<bool>> executeNext)
@@ -68,7 +90,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
         }
         #endregion
 
-        [TestMethod]
+        [Fact]
         public async Task Execute_CreateChainOfMiddlewareToHandleException_TheRightMiddleHandlesTheException()
         {
             var responsibilityChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
@@ -82,13 +104,13 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             var result = await responsibilityChain.Execute(invalidException);
 
             // Check if the given exception was handled
-            Assert.IsTrue(result);
+            Assert.True(result);
 
             // Check if the correct handler handled the exception.
-            Assert.AreEqual(typeof(InvalidateDataExceptionHandler).Name, invalidException.HandlerName);
+            Assert.Equal(typeof(InvalidateDataExceptionHandler).Name, invalidException.HandlerName);
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Execute_ChainOfMiddlewareThatDoesNotHandleTheException_ChainReturnsDefaultValue()
         {
             var responsibilityChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
@@ -102,10 +124,10 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             // The result should be the default for 'bool'.
             var result = await responsibilityChain.Execute(excception);
 
-            Assert.AreEqual(default(bool), result);
+            Assert.Equal(default(bool), result);
         }
 
-        [TestMethod]
+        [Fact]
         public async Task Execute_ChainOfMiddlewareWithFinallyFunc_FinallyFuncIsExecuted()
         {
             const string ExceptionSource = "EXCEPTION_SOURCE";
@@ -126,22 +148,41 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             // The result should true, since the finally function will be executed.
             var result = await responsibilityChain.Execute(exception);
 
-            Assert.IsTrue(result);
+            Assert.True(result);
 
-            Assert.AreEqual(ExceptionSource, exception.Source);
+            Assert.Equal(ExceptionSource, exception.Source);
         }
 
         /// <summary>
         /// Tests the <see cref="ResponsibilityChain{TParameter, TReturn}.Chain(Type)"/> method.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Chain_AddTypeThatIsNotAMiddleware_ThrowsException()
         {
             var responsibilityChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver());
-            PipelineNetAssert.ThrowsException<ArgumentException>(() =>
+            Assert.Throws<ArgumentException>(() =>
             {
                 responsibilityChain.Chain(typeof(ResponsibilityChainTests));
             });
+        }
+
+
+
+        /// <summary>
+        /// Try to generate a deadlock in synchronous middleware.
+        /// </summary>
+        [Fact]
+        public void Execute_SynchronousChainOfResponsibility_SuccessfullyExecute()
+        {
+            var responsibilityChain = new AsyncResponsibilityChain<string, string>(new ActivatorMiddlewareResolver())
+                .Chain<SyncReplaceNewLineMiddleware>()
+                .Chain<SyncTrimMiddleware>()
+                .Finally(input => Task.FromResult(input));
+
+            var resultTask = responsibilityChain.Execute("  Test\nwith spaces\n and new lines \n ");
+            var result = resultTask.Result;
+
+            Assert.Equal("Test with spaces  and new lines", result);
         }
     }
 }
