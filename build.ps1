@@ -18,7 +18,7 @@ if ($env:APPVEYOR_REPO_TAG -eq "true") {
 
     Write-Host "Git version tag detected: '$env:APPVEYOR_REPO_TAG_NAME'"
 
-    $packageVersionCommandArgument = " -p:Version=$packageVersion"
+    $packageVersionCommandArgument = " -p:Version=$env:APPVEYOR_REPO_TAG_NAME"
 
     $commitMessage = $env:APPVEYOR_REPO_COMMIT_MESSAGE
     if (-not [string]::IsNullOrWhiteSpace($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)) {
