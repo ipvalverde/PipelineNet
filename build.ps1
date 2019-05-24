@@ -35,5 +35,5 @@ Invoke-CommandWithLog -Command "dotnet test $testProjectPath -c Release --no-bui
 if (-not [string]::IsNullOrWhiteSpace($packageVersionCommandArgument)) {
     Invoke-CommandWithLog -Command "dotnet pack $mainProjectPath --no-build -c Release --include-symbols -o artifacts -p:PackageReleaseNotes=`"$commitMessage`"$packageVersionCommandArgument" -CommandName "pack"
 
-    Invoke-CommandWithLog -Command "dotnet nuget push *.nupkg -s $nugetSourceUrl -k $env:MYGET_KEY" -CommandName "publish"
+    Invoke-CommandWithLog -Command "dotnet nuget push artifacts/*.nupkg -s $nugetSourceUrl -k $env:MYGET_KEY" -CommandName "publish"
 }
