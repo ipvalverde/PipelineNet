@@ -7,7 +7,8 @@ function Invoke-CommandWithLog {
 }
 
 $nugetSourceUrl = "https://www.myget.org/F/pipelinenet/api/v2/package"
-$mainProjectPath = "src/PipelineNet/PipelineNet.csproj"
+$mainProjectDirectory = "src/PipelineNet/"
+$mainProjectPath = "$mainProjectDirectory/PipelineNet.csproj"
 $testProjectPath = "src/PipelineNet.Tests/PipelineNet.Tests.csproj"
 $solutionPath = "src/PipelineNet.sln"
 
@@ -35,5 +36,5 @@ Invoke-CommandWithLog -Command "dotnet test $testProjectPath -c Release --no-bui
 if (-not [string]::IsNullOrWhiteSpace($packageVersionCommandArgument)) {
     Invoke-CommandWithLog -Command "dotnet pack $mainProjectPath --no-build -c Release --include-symbols -o artifacts -p:PackageReleaseNotes=`"$commitMessage`"$packageVersionCommandArgument" -CommandName "pack"
 
-    Invoke-CommandWithLog -Command "dotnet nuget push artifacts/*.nupkg -s $nugetSourceUrl -k $env:MYGET_KEY" -CommandName "publish"
+    Invoke-CommandWithLog -Command "dotnet nuget push $mainProjectDirectory/artifacts/*.nupkg -s $nugetSourceUrl -k $env:MYGET_KEY" -CommandName "publish"
 }
