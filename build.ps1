@@ -7,7 +7,7 @@ function Invoke-CommandWithLog {
 }
 
 $nugetSourceUrl = "https://www.myget.org/F/pipelinenet/api/v2/package"
-$mainProjectDirectory = "src/PipelineNet/"
+$mainProjectDirectory = "src/PipelineNet"
 $mainProjectPath = "$mainProjectDirectory/PipelineNet.csproj"
 $testProjectPath = "src/PipelineNet.Tests/PipelineNet.Tests.csproj"
 $solutionPath = "src/PipelineNet.sln"
