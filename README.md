@@ -203,7 +203,7 @@ I have plans to create implementations for [Simple Injector](https://github.com/
 
 ### Unity implementation
 
-An implementation of the [middleware resolver for Unity](https://github.com/ShaneYu/PipelineNet.Unity) was kindly provided by [@ShaneYu](https://github.com/ShaneYu). You can grab it from nuget with:
+An implementation of the [middleware resolver for Unity](https://github.com/ShaneYu/PipelineNet.Unity) was kindly provided by [@ShaneYu](https://github.com/ShaneYu). It is tested against Unity.Container `5.8.X`, you can grab it from nuget with:
 
 ```
 Install-Package PipelineNet.Unity
