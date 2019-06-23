@@ -199,8 +199,15 @@ When configuring a pipeline/chain of responsibility you define the types of the 
 needs to be instantiated, so `IMiddlewareResolver` is responsible for that. You can even create your own implementation, since the
 `ActivatorMiddlewareResolver` only works for parametersless constructors.
 
-I'm planning to create implementations for [Simple Injector](https://github.com/simpleinjector/SimpleInjector), 
-[Unity](https://github.com/unitycontainer/unity) and [Ninject](https://github.com/ninject/Ninject).
+I have plans to create implementations for [Simple Injector](https://github.com/simpleinjector/SimpleInjector) and [ASP.NET Core IoC](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-2.2).
+
+### Unity implementation
+
+An implementation of the [middleware resolver for Unity](https://github.com/ShaneYu/PipelineNet.Unity) was kindly provided by [@ShaneYu](https://github.com/ShaneYu). You can grab it from nuget with:
+
+```
+Install-Package PipelineNet.Unity
+```
 
 ## License
 This project is licensed under MIT. Please, feel free to contribute with code, issues or tips :)
