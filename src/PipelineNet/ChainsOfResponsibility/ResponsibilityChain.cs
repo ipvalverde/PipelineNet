@@ -41,10 +41,10 @@ namespace PipelineNet.ChainsOfResponsibility
         /// </summary>
         /// <typeparam name="TMiddleware">The new middleware being added.</typeparam>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
-        public IResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>()
+        public IResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>(object args = null)
             where TMiddleware : IMiddleware<TParameter, TReturn>
         {
-            MiddlewareTypes.Add(typeof(TMiddleware));
+            MiddlewareTypes.Add(new Tuple<Type,object>(typeof(TMiddleware),args));
             return this;
         }
 
@@ -57,9 +57,9 @@ namespace PipelineNet.ChainsOfResponsibility
         /// not an implementation of <see cref="IAsyncMiddleware{TParameter, TReturn}"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
-        public IResponsibilityChain<TParameter, TReturn> Chain(Type middlewareType)
+        public IResponsibilityChain<TParameter, TReturn> Chain(Type middlewareType, object args = null)
         {
-            base.AddMiddleware(middlewareType);
+            base.AddMiddleware(middlewareType,args);
             return this;
         }
 
@@ -77,7 +77,7 @@ namespace PipelineNet.ChainsOfResponsibility
             func = (param) =>
             {
                 var type = MiddlewareTypes[index];
-                var middleware = (IMiddleware<TParameter, TReturn>)MiddlewareResolver.Resolve(type);
+                var middleware = (IMiddleware<TParameter, TReturn>)MiddlewareResolver.Resolve(type.Item1);
 
                 index++;
                 // If the current instance of middleware is the last one in the list,
@@ -86,7 +86,7 @@ namespace PipelineNet.ChainsOfResponsibility
                 if (index == MiddlewareTypes.Count)
                     func = this._finallyFunc ?? ((p) => default(TReturn));
 
-                return middleware.Run(param, func);
+                return middleware.Run(param, func,type.Item2);
             };
 
             return func(parameter);

@@ -16,10 +16,10 @@ namespace PipelineNet.Pipelines
         /// </summary>
         /// <typeparam name="TMiddleware"></typeparam>
         /// <returns></returns>
-        public IAsyncPipeline<TParameter> Add<TMiddleware>()
+        public IAsyncPipeline<TParameter> Add<TMiddleware>(object args = null)
             where TMiddleware : IAsyncMiddleware<TParameter>
         {
-            MiddlewareTypes.Add(typeof(TMiddleware));
+            MiddlewareTypes.Add(new Tuple<Type,object>(typeof(TMiddleware),args));
             return this;
         }
 
@@ -31,9 +31,9 @@ namespace PipelineNet.Pipelines
         /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
         /// not an implementation of <see cref="IMiddleware{TParameter}"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
-        public IAsyncPipeline<TParameter> Add(Type middlewareType)
+        public IAsyncPipeline<TParameter> Add(Type middlewareType,object args = null)
         {
-            base.AddMiddleware(middlewareType);
+            base.AddMiddleware(middlewareType,args);
             return this;
         }
 
@@ -51,13 +51,13 @@ namespace PipelineNet.Pipelines
             action = async (param) =>
             {
                 var type = MiddlewareTypes[index];
-                var firstMiddleware = (IAsyncMiddleware<TParameter>)MiddlewareResolver.Resolve(type);
+                var firstMiddleware = (IAsyncMiddleware<TParameter>)MiddlewareResolver.Resolve(type.Item1);
 
                 index++;
                 if (index == MiddlewareTypes.Count)
                     action = (p) => Task.FromResult(0);
 
-                await firstMiddleware.Run(param, action).ConfigureAwait(false);
+                await firstMiddleware.Run(param, action,type.Item2).ConfigureAwait(false);
             };
 
             await action(parameter).ConfigureAwait(false);

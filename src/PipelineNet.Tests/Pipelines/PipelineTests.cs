@@ -30,7 +30,7 @@ namespace PipelineNet.Tests.Pipeline
         #region Middleware definitions
         public class PersonWithEvenId : IMiddleware<PersonModel>
         {
-            public void Run(PersonModel context, Action<PersonModel> executeNext)
+            public void Run(PersonModel context, Action<PersonModel> executeNext,object args = null)
             {
                 if (context.Id.HasValue && context.Id.Value % 2 == 0)
                     context.Level = 1;
@@ -40,7 +40,7 @@ namespace PipelineNet.Tests.Pipeline
 
         public class PersonWithOddId : IMiddleware<PersonModel>
         {
-            public void Run(PersonModel context, Action<PersonModel> executeNext)
+            public void Run(PersonModel context, Action<PersonModel> executeNext,object args = null)
             {
                 if (context.Id.HasValue && context.Id.Value % 2 != 0)
                     context.Level = 2;
@@ -50,7 +50,7 @@ namespace PipelineNet.Tests.Pipeline
 
         public class PersonWithEmailName : IMiddleware<PersonModel>
         {
-            public void Run(PersonModel context, Action<PersonModel> executeNext)
+            public void Run(PersonModel context, Action<PersonModel> executeNext,object args = null)
             {
                 if (!string.IsNullOrWhiteSpace(context.Name) && Regex.IsMatch(context.Name, @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$"))
                     context.Level = 3;
@@ -60,7 +60,7 @@ namespace PipelineNet.Tests.Pipeline
 
         public class PersonWithGenderProperty : IMiddleware<PersonModel>
         {
-            public void Run(PersonModel context, Action<PersonModel> executeNext)
+            public void Run(PersonModel context, Action<PersonModel> executeNext,object args = null)
             {
                 if (context.Gender.HasValue)
                     context.Level = 4;

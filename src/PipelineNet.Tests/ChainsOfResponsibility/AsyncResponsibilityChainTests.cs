@@ -25,7 +25,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
         #region Middleware definitions
         public class SyncReplaceNewLineMiddleware : IAsyncMiddleware<string, string>
         {
-            public Task<string> Run(string input, Func<string, Task<string>> executeNext)
+            public Task<string> Run(string input, Func<string, Task<string>> executeNext,object args = null)
             {
                 var newLineReplaced = input.Replace("\n", " ");
 
@@ -37,7 +37,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
         public class SyncTrimMiddleware : IAsyncMiddleware<string, string>
         {
-            public Task<string> Run(string input, Func<string, Task<string>> executeNext)
+            public Task<string> Run(string input, Func<string, Task<string>> executeNext,object args = null)
             {
                 var trimmedString = input.Trim();
 
@@ -49,7 +49,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
         public class UnavailableResourcesExceptionHandler : IAsyncMiddleware<Exception, bool>
         {
-            public async Task<bool> Run(Exception exception, Func<Exception, Task<bool>> executeNext)
+            public async Task<bool> Run(Exception exception, Func<Exception, Task<bool>> executeNext, object args = null)
             {
                 var castedException = exception as UnavailableResourcesException;
                 if (castedException != null)
@@ -63,7 +63,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
         public class InvalidateDataExceptionHandler : IAsyncMiddleware<Exception, bool>
         {
-            public async Task<bool> Run(Exception exception, Func<Exception, Task<bool>> executeNext)
+            public async Task<bool> Run(Exception exception, Func<Exception, Task<bool>> executeNext, object args = null)
             {
                 var castedException = exception as InvalidateDataException;
                 if (castedException != null)
@@ -77,7 +77,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
         public class MyExceptionHandler : IAsyncMiddleware<Exception, bool>
         {
-            public async Task<bool> Run(Exception exception, Func<Exception, Task<bool>> executeNext)
+            public async Task<bool> Run(Exception exception, Func<Exception, Task<bool>> executeNext,object args = null)
             {
                 var castedException = exception as MyException;
                 if (castedException != null)

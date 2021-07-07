@@ -23,10 +23,10 @@ namespace PipelineNet.Pipelines
         /// </summary>
         /// <typeparam name="TMiddleware"></typeparam>
         /// <returns></returns>
-        public IPipeline<TParameter> Add<TMiddleware>()
+        public IPipeline<TParameter> Add<TMiddleware>(object args = null)
             where TMiddleware : IMiddleware<TParameter>
         {
-            MiddlewareTypes.Add(typeof(TMiddleware));
+            MiddlewareTypes.Add(new Tuple<Type,object>(typeof(TMiddleware),args));
             return this;
         }
 
@@ -38,9 +38,9 @@ namespace PipelineNet.Pipelines
         /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
         /// not an implementation of <see cref="IMiddleware{TParameter}"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
-        public IPipeline<TParameter> Add(Type middlewareType)
+        public IPipeline<TParameter> Add(Type middlewareType,object args = null)
         {
-            base.AddMiddleware(middlewareType);
+            base.AddMiddleware(middlewareType,args);
             return this;
         }
 
@@ -58,13 +58,13 @@ namespace PipelineNet.Pipelines
             action = (param) =>
             {
                 var type = MiddlewareTypes[index];
-                var middleware = (IMiddleware<TParameter>)MiddlewareResolver.Resolve(type);
+                var middleware = (IMiddleware<TParameter>)MiddlewareResolver.Resolve(type.Item1);
 
                 index++;
                 if (index == MiddlewareTypes.Count)
                     action = (p) => { };
 
-                middleware.Run(param, action);
+                middleware.Run(param, action,type.Item2);
             };
 
             action(parameter);

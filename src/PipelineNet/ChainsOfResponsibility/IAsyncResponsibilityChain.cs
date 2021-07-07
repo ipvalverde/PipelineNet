@@ -26,7 +26,7 @@ namespace PipelineNet.ChainsOfResponsibility
         /// </summary>
         /// <typeparam name="TMiddleware">The new middleware being added.</typeparam>
         /// <returns>The current instance of <see cref="IAsyncResponsibilityChain{TParameter, TReturn}"/>.</returns>
-        IAsyncResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>()
+        IAsyncResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>(object args = null)
             where TMiddleware : IAsyncMiddleware<TParameter, TReturn>;
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace PipelineNet.ChainsOfResponsibility
         /// not an implementation of <see cref="IAsyncMiddleware{TParameter, TReturn}"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
         /// <returns>The current instance of <see cref="IAsyncResponsibilityChain{TParameter, TReturn}"/>.</returns>
-        IAsyncResponsibilityChain<TParameter, TReturn> Chain(Type middlewareType);
+        IAsyncResponsibilityChain<TParameter, TReturn> Chain(Type middlewareType,object args = null);
 
         /// <summary>
         /// Executes the configured chain of responsibility.

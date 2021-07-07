@@ -7,14 +7,14 @@ namespace PipelineNet
 {
     public abstract class BaseMiddlewareFlow<TMiddleware>
     {
-        protected IList<Type> MiddlewareTypes { get; private set; }
+        protected IList<Tuple<Type,object>> MiddlewareTypes { get; private set; }
         protected IMiddlewareResolver MiddlewareResolver { get; private set; }
 
         internal BaseMiddlewareFlow(IMiddlewareResolver middlewareResolver)
         {
             MiddlewareResolver = middlewareResolver ?? throw new ArgumentNullException("middlewareResolver",
                 "An instance of IMiddlewareResolver must be provided. You can use ActivatorMiddlewareResolver.");
-            MiddlewareTypes = new List<Type>();
+            MiddlewareTypes = new List<Tuple<Type,object>>();
         }
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace PipelineNet
         /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
         /// not an implementation of <typeparamref name="TMiddleware"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
-        protected void AddMiddleware(Type middlewareType)
+        protected void AddMiddleware(Type middlewareType,object args)
         {
             if (middlewareType == null) throw new ArgumentNullException("middlewareType");
 
@@ -39,7 +39,7 @@ namespace PipelineNet
                 throw new ArgumentException(
                     $"The middleware type must implement \"{typeof(TMiddleware)}\".");
 
-            this.MiddlewareTypes.Add(middlewareType);
+            this.MiddlewareTypes.Add(new Tuple<Type,object>(middlewareType,args));
         }
     }
 }

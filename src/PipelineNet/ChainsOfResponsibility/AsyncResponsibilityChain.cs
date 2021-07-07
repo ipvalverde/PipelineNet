@@ -29,9 +29,9 @@ namespace PipelineNet.ChainsOfResponsibility
         /// </summary>
         /// <typeparam name="TMiddleware">The new middleware being added.</typeparam>
         /// <returns>The current instance of <see cref="IAsyncResponsibilityChain{TParameter, TReturn}"/>.</returns>
-        public IAsyncResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>() where TMiddleware : IAsyncMiddleware<TParameter, TReturn>
+        public IAsyncResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>(object args = null) where TMiddleware : IAsyncMiddleware<TParameter, TReturn>
         {
-            MiddlewareTypes.Add(typeof(TMiddleware));
+            MiddlewareTypes.Add(new Tuple<Type,object>(typeof(TMiddleware),args));
             return this;
         }
 
@@ -44,9 +44,9 @@ namespace PipelineNet.ChainsOfResponsibility
         /// not an implementation of <see cref="IAsyncMiddleware{TParameter, TReturn}"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
         /// <returns>The current instance of <see cref="IAsyncResponsibilityChain{TParameter, TReturn}"/>.</returns>
-        public IAsyncResponsibilityChain<TParameter, TReturn> Chain(Type middlewareType)
+        public IAsyncResponsibilityChain<TParameter, TReturn> Chain(Type middlewareType, object args = null)
         {
-            base.AddMiddleware(middlewareType);
+            base.AddMiddleware(middlewareType,args);
             return this;
         }
 
@@ -64,7 +64,7 @@ namespace PipelineNet.ChainsOfResponsibility
             func = (param) =>
             {
                 var type = MiddlewareTypes[index];
-                var middleware = (IAsyncMiddleware<TParameter, TReturn>)MiddlewareResolver.Resolve(type);
+                var middleware = (IAsyncMiddleware<TParameter, TReturn>)MiddlewareResolver.Resolve(type.Item1);
 
                 index++;
                 // If the current instance of middleware is the last one in the list,
@@ -73,7 +73,7 @@ namespace PipelineNet.ChainsOfResponsibility
                 if (index == MiddlewareTypes.Count)
                     func = this._finallyFunc ?? ((p) => Task.FromResult(default(TReturn)));
 
-                return middleware.Run(param, func);
+                return middleware.Run(param, func,type.Item2);
             };
 
             return await func(parameter).ConfigureAwait(false);

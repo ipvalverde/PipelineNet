@@ -11,7 +11,7 @@ namespace PipelineNet.Pipelines
         /// </summary>
         /// <typeparam name="TMiddleware"></typeparam>
         /// <returns></returns>
-        IAsyncPipeline<TParameter> Add<TMiddleware>()
+        IAsyncPipeline<TParameter> Add<TMiddleware>(object args = null)
             where TMiddleware : IAsyncMiddleware<TParameter>;
 
         /// <summary>
@@ -28,6 +28,6 @@ namespace PipelineNet.Pipelines
         /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
         /// not an implementation of <see cref="IMiddleware{TParameter}"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
-        IAsyncPipeline<TParameter> Add(Type middlewareType);
+        IAsyncPipeline<TParameter> Add(Type middlewareType,object args = null);
     }
 }

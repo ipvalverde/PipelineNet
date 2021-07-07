@@ -24,7 +24,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
         #region Middleware definitions
         public class UnavailableResourcesExceptionHandler : IMiddleware<Exception, bool>
         {
-            public bool Run(Exception exception, Func<Exception, bool> executeNext)
+            public bool Run(Exception exception, Func<Exception, bool> executeNext,object args = null)
             {
                 var castedException = exception as UnavailableResourcesException;
                 if (castedException != null)
@@ -38,7 +38,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
         public class InvalidateDataExceptionHandler : IMiddleware<Exception, bool>
         {
-            public bool Run(Exception exception, Func<Exception, bool> executeNext)
+            public bool Run(Exception exception, Func<Exception, bool> executeNext, object args = null)
             {
                 var castedException = exception as InvalidateDataException;
                 if (castedException != null)
@@ -52,7 +52,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
         public class MyExceptionHandler : IMiddleware<Exception, bool>
         {
-            public bool Run(Exception exception, Func<Exception, bool> executeNext)
+            public bool Run(Exception exception, Func<Exception, bool> executeNext,object args = null)
             {
                 var castedException = exception as MyException;
                 if (castedException != null)

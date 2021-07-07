@@ -32,7 +32,7 @@ namespace PipelineNet.Tests.Pipelines
         #region Middleware definitions
         public class PersonWithEvenId : IAsyncMiddleware<PersonModel>
         {
-            public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext)
+            public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext,object args = null)
             {
                 if (context.Id.HasValue && context.Id.Value % 2 == 0)
                     context.Level = 1;
@@ -42,7 +42,7 @@ namespace PipelineNet.Tests.Pipelines
 
         public class PersonWithOddId : IAsyncMiddleware<PersonModel>
         {
-            public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext)
+            public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext,object args = null)
             {
                 if (context.Id.HasValue && context.Id.Value % 2 != 0)
                     context.Level = 2;
@@ -52,7 +52,7 @@ namespace PipelineNet.Tests.Pipelines
 
         public class PersonWithEmailName : IAsyncMiddleware<PersonModel>
         {
-            public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext)
+            public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext,object args = null)
             {
                 if (!string.IsNullOrWhiteSpace(context.Name) && Regex.IsMatch(context.Name, @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$"))
                     context.Level = 3;
@@ -62,7 +62,7 @@ namespace PipelineNet.Tests.Pipelines
 
         public class PersonWithGenderProperty : IAsyncMiddleware<PersonModel>
         {
-            public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext)
+            public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext,object args = null)
             {
                 if (context.Gender.HasValue)
                     context.Level = 4;
