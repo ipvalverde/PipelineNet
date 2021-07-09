@@ -1,6 +1,5 @@
 ﻿using PipelineNet.ChainsOfResponsibility;
 using PipelineNet.Middleware;
-using PipelineNet.MiddlewareResolver;
 using System;
 using Xunit;
 
@@ -68,7 +67,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
         [Fact]
         public void Execute_CreateChainOfMiddlewareToHandleException_TheRightMiddleHandlesTheException()
         {
-            var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+            var responsibilityChain = new ResponsibilityChain<Exception, bool>()
                 .Chain<UnavailableResourcesExceptionHandler>()
                 .Chain<InvalidateDataExceptionHandler>()
                 .Chain<MyExceptionHandler>();
@@ -88,7 +87,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
         [Fact]
         public void Execute_ChainOfMiddlewareThatDoesNotHandleTheException_ChainReturnsDefaultValue()
         {
-            var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+            var responsibilityChain = new ResponsibilityChain<Exception, bool>()
                 .Chain<UnavailableResourcesExceptionHandler>()
                 .Chain<InvalidateDataExceptionHandler>()
                 .Chain<MyExceptionHandler>();
@@ -100,45 +99,6 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             var result = responsibilityChain.Execute(excception);
 
             Assert.Equal(default(bool), result);
-        }
-
-        [Fact]
-        public void Execute_ChainOfMiddlewareWithFinallyFunc_FinallyFuncIsExecuted()
-        {
-            const string ExceptionSource = "EXCEPTION_SOURCE";
-
-            var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
-                .Chain<UnavailableResourcesExceptionHandler>()
-                .Chain(typeof(InvalidateDataExceptionHandler))
-                .Chain<MyExceptionHandler>()
-                .Finally((ex) =>
-                {
-                    ex.Source = ExceptionSource;
-                    return true;
-                });
-
-            // Creates an ArgumentNullException, that will not be handled by any middleware.
-            var exception = new ArgumentNullException();
-
-            // The result should true, since the finally function will be executed.
-            var result = responsibilityChain.Execute(exception);
-
-            Assert.True(result);
-
-            Assert.Equal(ExceptionSource, exception.Source);
-        }
-
-        /// <summary>
-        /// Tests the <see cref="ResponsibilityChain{TParameter, TReturn}.Chain(Type)"/> method.
-        /// </summary>
-        [Fact]
-        public void Chain_AddTypeThatIsNotAMiddleware_ThrowsException()
-        {
-            var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver());
-            Assert.Throws<ArgumentException>(() =>
-            {
-                responsibilityChain.Chain(typeof(ResponsibilityChainTests));
-            });
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using PipelineNet.Middleware;
-using PipelineNet.MiddlewareResolver;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PipelineNet.ChainsOfResponsibility
@@ -10,18 +10,9 @@ namespace PipelineNet.ChainsOfResponsibility
     /// </summary>
     /// <typeparam name="TParameter">The input type for the chain.</typeparam>
     /// <typeparam name="TReturn">The return type of the chain.</typeparam>
-    public class AsyncResponsibilityChain<TParameter, TReturn> : BaseMiddlewareFlow<IAsyncMiddleware<TParameter, TReturn>>,
-        IAsyncResponsibilityChain<TParameter, TReturn>
+    public class AsyncResponsibilityChain<TParameter, TReturn> : BaseMiddlewareFlow<IAsyncMiddleware<TParameter,TReturn>>, IAsyncResponsibilityChain<TParameter, TReturn>
     {
         private Func<TParameter, Task<TReturn>> _finallyFunc;
-
-        /// <summary>
-        /// Creates a new asynchronous chain of responsibility.
-        /// </summary>
-        /// <param name="middlewareResolver">The resolver used to create the middleware types.</param>
-        public AsyncResponsibilityChain(IMiddlewareResolver middlewareResolver) : base(middlewareResolver)
-        {
-        }
 
         /// <summary>
         /// Chains a new middleware to the chain of responsibility.
@@ -29,24 +20,11 @@ namespace PipelineNet.ChainsOfResponsibility
         /// </summary>
         /// <typeparam name="TMiddleware">The new middleware being added.</typeparam>
         /// <returns>The current instance of <see cref="IAsyncResponsibilityChain{TParameter, TReturn}"/>.</returns>
-        public IAsyncResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>() where TMiddleware : IAsyncMiddleware<TParameter, TReturn>
+        public IAsyncResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>(Action<TMiddleware> configure = null) where TMiddleware : IAsyncMiddleware<TParameter, TReturn>, new()
         {
-            MiddlewareTypes.Add(typeof(TMiddleware));
-            return this;
-        }
-
-        /// <summary>
-        /// Chains a new middleware type to the chain of responsibility.
-        /// Middleware will be executed in the same order they are added.
-        /// </summary>
-        /// <param name="middlewareType">The middleware type to be executed.</param>
-        /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
-        /// not an implementation of <see cref="IAsyncMiddleware{TParameter, TReturn}"/>.</exception>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
-        /// <returns>The current instance of <see cref="IAsyncResponsibilityChain{TParameter, TReturn}"/>.</returns>
-        public IAsyncResponsibilityChain<TParameter, TReturn> Chain(Type middlewareType)
-        {
-            base.AddMiddleware(middlewareType);
+            var mw = new TMiddleware();
+            configure?.Invoke(mw);
+            Middleware.Add(mw);
             return this;
         }
 
@@ -56,27 +34,20 @@ namespace PipelineNet.ChainsOfResponsibility
         /// <param name="parameter"></param>
         public async Task<TReturn> Execute(TParameter parameter)
         {
-            if (MiddlewareTypes.Count == 0)
-                return default(TReturn);
+            var res = await Do(parameter,Middleware.GetEnumerator());
+            return res;
 
-            int index = 0;
-            Func<TParameter, Task<TReturn>> func = null;
-            func = (param) =>
-            {
-                var type = MiddlewareTypes[index];
-                var middleware = (IAsyncMiddleware<TParameter, TReturn>)MiddlewareResolver.Resolve(type);
-
-                index++;
-                // If the current instance of middleware is the last one in the list,
-                // the "next" function is assigned to the finally function or a 
-                // default empty function.
-                if (index == MiddlewareTypes.Count)
-                    func = this._finallyFunc ?? ((p) => Task.FromResult(default(TReturn)));
-
-                return middleware.Run(param, func);
-            };
-
-            return await func(parameter).ConfigureAwait(false);
+            async Task<TReturn> Do(TParameter _param,IEnumerator<IAsyncMiddleware<TParameter,TReturn>> e){
+                
+                if(!e.MoveNext()){
+                    if(_finallyFunc is not null)
+                        return await _finallyFunc?.Invoke(_param);
+                    return default(TReturn);
+                }
+                return await e.Current.Run(_param,async p=>{
+                    return await Do(p,e);
+                });
+            }
         }
 
         /// <summary>
