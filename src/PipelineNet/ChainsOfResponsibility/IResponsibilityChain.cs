@@ -1,5 +1,6 @@
 ﻿using PipelineNet.Middleware;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PipelineNet.ChainsOfResponsibility
 {
@@ -26,6 +27,8 @@ namespace PipelineNet.ChainsOfResponsibility
         /// <typeparam name="TMiddleware">The new middleware being added.</typeparam>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
         IResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>(Action<TMiddleware> configure = null)
+            where TMiddleware : IMiddleware<TParameter, TReturn>, new();
+        IResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>([NotNull] TMiddleware middleware)
             where TMiddleware : IMiddleware<TParameter, TReturn>, new();
 
         /// <summary>

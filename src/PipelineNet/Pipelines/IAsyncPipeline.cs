@@ -1,5 +1,6 @@
 ﻿using PipelineNet.Middleware;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace PipelineNet.Pipelines
@@ -13,7 +14,8 @@ namespace PipelineNet.Pipelines
         /// <returns></returns>
         IAsyncPipeline<TParameter> Add<TMiddleware>(Action<TMiddleware> configure = null)
             where TMiddleware : IAsyncMiddleware<TParameter>, new();
-
+        IAsyncPipeline<TParameter> Add<TMiddleware>([NotNull]TMiddleware middleware)
+            where TMiddleware : IAsyncMiddleware<TParameter>, new();
         /// <summary>
         /// Execute the configured pipeline.
         /// </summary>

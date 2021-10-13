@@ -1,6 +1,7 @@
 ﻿using PipelineNet.Middleware;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PipelineNet.ChainsOfResponsibility
 {
@@ -9,7 +10,7 @@ namespace PipelineNet.ChainsOfResponsibility
     /// </summary>
     /// <typeparam name="TParameter">The input type for the chain.</typeparam>
     /// <typeparam name="TReturn">The return type of the chain.</typeparam>
-    public class ResponsibilityChain<TParameter, TReturn> : BaseMiddlewareFlow<IMiddleware<TParameter,TReturn>>, IResponsibilityChain<TParameter, TReturn>
+    public class ResponsibilityChain<TParameter, TReturn> : BaseMiddlewareFlow<IMiddleware<TParameter, TReturn>>, IResponsibilityChain<TParameter, TReturn>
     {
         private Func<TParameter, TReturn> _finallyFunc;
 
@@ -41,6 +42,11 @@ namespace PipelineNet.ChainsOfResponsibility
             return this;
         }
 
+        public IResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>([NotNull] TMiddleware middleware) where TMiddleware : IMiddleware<TParameter, TReturn>, new()
+        {
+            Middleware.Add(middleware);
+            return this;
+        }
 
         /// <summary>
         /// Execute the configured chain of responsibility.
@@ -48,20 +54,25 @@ namespace PipelineNet.ChainsOfResponsibility
         /// <param name="parameter"></param>
         public TReturn Execute(TParameter parameter)
         {
-            var res = Do(parameter,Middleware.GetEnumerator());
+            var res = Do(parameter, Middleware.GetEnumerator());
             return res;
 
-            TReturn Do(TParameter _param,IEnumerator<IMiddleware<TParameter,TReturn>> e){
-                if(!e.MoveNext()){
-                    if(_finallyFunc is not null)
+            TReturn Do(TParameter _param, IEnumerator<IMiddleware<TParameter, TReturn>> e)
+            {
+                if (!e.MoveNext())
+                {
+                    if (_finallyFunc is null)
+                        return default(TReturn);
+                    else
                         return _finallyFunc.Invoke(_param);
-                    return default(TReturn);
                 }
-                    
-                return e.Current.Run(_param,p=>{
-                    return Do(p,e);
+
+                return e.Current.Run(_param, p =>
+                {
+                    return Do(p, e);
                 });
             }
         }
+
     }
 }

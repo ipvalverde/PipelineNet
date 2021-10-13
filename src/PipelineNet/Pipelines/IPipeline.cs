@@ -1,5 +1,6 @@
 ﻿using PipelineNet.Middleware;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PipelineNet.Pipelines
 {
@@ -17,7 +18,8 @@ namespace PipelineNet.Pipelines
         /// <returns></returns>
         IPipeline<TParameter> Add<TMiddleware>(Action<TMiddleware> configure = null)
             where TMiddleware : IMiddleware<TParameter>, new();
-
+        IPipeline<TParameter> Add<TMiddleware>([NotNull]TMiddleware middleware)
+            where TMiddleware : IMiddleware<TParameter>, new();
         /// <summary>
         /// Executes the configured pipeline.
         /// </summary>
