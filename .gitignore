@@ -25,6 +25,10 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+**/obj/
+**/bin/
+# Vs code settings
+**/.vscode/
 
 # Visual Studio 2015 cache/options directory
 .vs/
