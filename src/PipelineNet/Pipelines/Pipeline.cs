@@ -1,7 +1,6 @@
 ﻿using PipelineNet.Middleware;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -37,12 +36,6 @@ namespace PipelineNet.Pipelines
             configure?.Invoke(middleware);
             Middleware.Add(middleware);
 
-            return this;
-        }
-
-        public IPipeline<TParameter> Add<TMiddleware>([NotNull] TMiddleware middleware) where TMiddleware : IMiddleware<TParameter>, new()
-        {
-            Middleware.Add(middleware);
             return this;
         }
 

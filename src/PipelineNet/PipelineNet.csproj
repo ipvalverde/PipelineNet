@@ -1,29 +1,31 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
+
   <PropertyGroup Label="MainGroup">
     <Version>1.0.0</Version>
     <PackageId>PipelineNet</PackageId>
-    <PackageTitle>Kemsekov.PipelineNet</PackageTitle>
+    <PackageTitle>PipelineNet</PackageTitle>
     <PackageVersion>$(Version)</PackageVersion>
-    <Authors>Israel Valverde and Kemsekov</Authors>
+    <Authors>Israel Valverde</Authors>
     <Description>A micro framework that helps you implement pipeline and chain of responsibility patterns.</Description>
-    <PackageProjectUrl>https://github.com/Kemsekov/PipelineNet</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/Kemsekov/PipelineNet/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/ipvalverde/PipelineNet</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/ipvalverde/PipelineNet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright © Israel Valverde</Copyright>
     <PackageTags>Pipeline .NetCore Portable Chain Responsibility ChainOfResponsibility Core NetStandard</PackageTags>
   </PropertyGroup>
+
   <PropertyGroup Condition="Exists('$(PackageReleaseNotes)')">
     <PackageReleaseNotes>$(PackageReleaseNotes)</PackageReleaseNotes>
   </PropertyGroup>
+  
   <PropertyGroup Condition="!Exists('$(PackageReleaseNotes)')">
     <PackageReleaseNotes>
       - Updating csproj file format;
       - Adding support for blocking calls in asp.net and UI threads;
     </PackageReleaseNotes>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Bit.System.Diagnostics.CodeAnalysis" Version="1.0.0"/>
-  </ItemGroup>
+
 </Project>

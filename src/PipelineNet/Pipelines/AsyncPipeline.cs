@@ -1,7 +1,6 @@
 ﻿using PipelineNet.Middleware;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace PipelineNet.Pipelines
@@ -20,12 +19,6 @@ namespace PipelineNet.Pipelines
         {
             var middleware = new TMiddleware();
             configure?.Invoke(middleware);
-            Middleware.Add(middleware);
-            return this;
-        }
-
-        public IAsyncPipeline<TParameter> Add<TMiddleware>([NotNull] TMiddleware middleware) where TMiddleware : IAsyncMiddleware<TParameter>, new()
-        {
             Middleware.Add(middleware);
             return this;
         }

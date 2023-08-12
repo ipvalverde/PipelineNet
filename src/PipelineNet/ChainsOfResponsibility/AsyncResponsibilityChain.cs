@@ -1,7 +1,6 @@
 ﻿using PipelineNet.Middleware;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace PipelineNet.ChainsOfResponsibility
@@ -11,7 +10,7 @@ namespace PipelineNet.ChainsOfResponsibility
     /// </summary>
     /// <typeparam name="TParameter">The input type for the chain.</typeparam>
     /// <typeparam name="TReturn">The return type of the chain.</typeparam>
-    public class AsyncResponsibilityChain<TParameter, TReturn> : BaseMiddlewareFlow<IAsyncMiddleware<TParameter, TReturn>>, IAsyncResponsibilityChain<TParameter, TReturn>
+    public class AsyncResponsibilityChain<TParameter, TReturn> : BaseMiddlewareFlow<IAsyncMiddleware<TParameter,TReturn>>, IAsyncResponsibilityChain<TParameter, TReturn>
     {
         private Func<TParameter, Task<TReturn>> _finallyFunc;
 
@@ -29,34 +28,24 @@ namespace PipelineNet.ChainsOfResponsibility
             return this;
         }
 
-        public IAsyncResponsibilityChain<TParameter, TReturn> Chain<TMiddleware>([NotNull] TMiddleware middleware) where TMiddleware : IAsyncMiddleware<TParameter, TReturn>, new()
-        {
-            Middleware.Add(middleware);
-            return this;
-        }
-
         /// <summary>
         /// Executes the configured chain of responsibility.
         /// </summary>
         /// <param name="parameter"></param>
         public async Task<TReturn> Execute(TParameter parameter)
         {
-            var res = await Do(parameter, Middleware.GetEnumerator());
+            var res = await Do(parameter,Middleware.GetEnumerator());
             return res;
 
-            async Task<TReturn> Do(TParameter _param, IEnumerator<IAsyncMiddleware<TParameter, TReturn>> e)
-            {
-
-                if (!e.MoveNext())
-                {
-                    if (_finallyFunc is null)
-                        return default(TReturn);
-                    else
+            async Task<TReturn> Do(TParameter _param,IEnumerator<IAsyncMiddleware<TParameter,TReturn>> e){
+                
+                if(!e.MoveNext()){
+                    if(_finallyFunc is not null)
                         return await _finallyFunc?.Invoke(_param);
+                    return default(TReturn);
                 }
-                return await e.Current.Run(_param, async p =>
-                {
-                    return await Do(p, e);
+                return await e.Current.Run(_param,async p=>{
+                    return await Do(p,e);
                 });
             }
         }
