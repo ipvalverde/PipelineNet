@@ -6,12 +6,12 @@
 
   <PropertyGroup Label="MainGroup">
     <Version>1.0.2</Version>
-    <PackageId>PipelineNet</PackageId>
-    <PackageTitle>PipelineNet</PackageTitle>
+    <PackageId>Kemsekov.PipelineNet</PackageId>
+    <PackageTitle>Kemsekov.PipelineNet</PackageTitle>
     <PackageVersion>$(Version)</PackageVersion>
     <Authors>Israel Valverde</Authors>
     <Description>A micro framework that helps you implement pipeline and chain of responsibility patterns.</Description>
-    <PackageProjectUrl>https://github.com/ipvalverde/PipelineNet</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/Kemsekov/PipelineNet</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/ipvalverde/PipelineNet/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright © Israel Valverde</Copyright>
     <PackageTags>Pipeline .NetCore Portable Chain Responsibility ChainOfResponsibility Core NetStandard</PackageTags>
