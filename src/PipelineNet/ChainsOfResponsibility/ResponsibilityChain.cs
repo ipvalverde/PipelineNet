@@ -53,9 +53,9 @@ namespace PipelineNet.ChainsOfResponsibility
 
             TReturn Do(TParameter _param,IEnumerator<IMiddleware<TParameter,TReturn>> e){
                 if(!e.MoveNext()){
-                    if(_finallyFunc is not null)
+                    if(!(_finallyFunc is null))
                         return _finallyFunc.Invoke(_param);
-                    return default(TReturn);
+                    return default;
                 }
                     
                 return e.Current.Run(_param,p=>{

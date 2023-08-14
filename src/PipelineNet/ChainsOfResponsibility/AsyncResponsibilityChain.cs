@@ -40,9 +40,9 @@ namespace PipelineNet.ChainsOfResponsibility
             async Task<TReturn> Do(TParameter _param,IEnumerator<IAsyncMiddleware<TParameter,TReturn>> e){
                 
                 if(!e.MoveNext()){
-                    if(_finallyFunc is not null)
+                    if(!(_finallyFunc is null))
                         return await _finallyFunc?.Invoke(_param);
-                    return default(TReturn);
+                    return default;
                 }
                 return await e.Current.Run(_param,async p=>{
                     return await Do(p,e);

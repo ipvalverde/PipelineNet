@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Label="MainGroup">
-    <Version>1.0.0</Version>
+    <Version>1.0.2</Version>
     <PackageId>PipelineNet</PackageId>
     <PackageTitle>PipelineNet</PackageTitle>
     <PackageVersion>$(Version)</PackageVersion>
