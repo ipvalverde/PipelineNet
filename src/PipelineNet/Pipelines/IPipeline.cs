@@ -1,5 +1,6 @@
 ﻿using PipelineNet.Middleware;
 using System;
+using System.Threading;
 
 namespace PipelineNet.Pipelines
 {
