@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PipelineNet.MethodsChains;
 using Xunit;
 
@@ -26,6 +27,24 @@ namespace PipelineNet.Tests.MethodsChains{
                 });
             Assert.Throws<Exception>(()=>chain.Run(25));
             Assert.False(reachedEnd);
+        }
+        [Fact]
+        public void WithoutReturnType(){
+            var result = new List<int>();
+            var doubleResult = new List<int>();
+            var chain = MethodsChain<int,string>
+                .Chain(num=>(1+num).ToString())
+                .Chain(numStr=>numStr+"2")
+                .Chain(int.Parse)
+                .Chain(result.Add)
+                .Chain(x=>doubleResult.Add(x*2));
+            
+            chain.Run(10);
+            chain.Run(20);
+            chain.Run(30);
+
+            Assert.Equal(new[]{112,212,312},result);
+            Assert.Equal(new[]{2*112,2*212,2*312},doubleResult);
         }
     }
 }
