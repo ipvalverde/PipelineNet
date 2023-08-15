@@ -18,6 +18,10 @@ namespace PipelineNet.MethodsChains
         /// </summary>
         IMethodsChain<TInput, TNext> Chain<TNext>(Func<TOutput, TNext> nextCall);
         /// <summary>
+        /// Chains another chain
+        /// </summary>
+        IMethodsChain<TInput, TNext> Chain<TNext>(IMethodsChain<TOutput, TNext> nextCall);
+        /// <summary>
         /// Chains current chain without output - just will pass input to next chain
         /// </summary>
         /// <param name="nextCall"></param>

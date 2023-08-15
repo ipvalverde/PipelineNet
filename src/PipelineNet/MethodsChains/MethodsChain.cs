@@ -25,12 +25,12 @@ namespace PipelineNet.MethodsChains
                 }
             );
         }
-
-        public TOutput Run(TInput input)=>OnCall(input);
-
         public IMethodsChain<TInput, TOutput> Chain(Action<TOutput> nextCall)=>Chain(x=>{
             nextCall(x);
             return x;
         });
+
+        public IMethodsChain<TInput, TNext> Chain<TNext>(IMethodsChain<TOutput, TNext> nextCall)=>Chain(nextCall.Run);
+        public TOutput Run(TInput input)=>OnCall(input);
     }
 }
