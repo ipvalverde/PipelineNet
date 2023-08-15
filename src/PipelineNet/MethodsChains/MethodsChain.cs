@@ -15,6 +15,11 @@ namespace PipelineNet.MethodsChains
         }
         public static IMethodsChain<TInput, TOutput> Chain(Func<TInput, TOutput> nextCall) => new MethodsChain<TInput,TOutput>(nextCall);
         public static IMethodsChain<TInput, TOutput> Chain(IMethodsChain<TInput, TOutput> nextCall) => new MethodsChain<TInput,TOutput>(nextCall.Run);
+        public static IMethodsChain<TInput, TInput> Chain(Action<TInput> nextCall) => new MethodsChain<TInput,TInput>(x=>{
+            nextCall(x);
+            return x;
+        });
+
         public IMethodsChain<TInput, TNext> Chain<TNext>(Func<TOutput, TNext> nextCall)
         {
             return new MethodsChain<TInput, TNext>(
