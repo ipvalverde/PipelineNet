@@ -11,8 +11,8 @@ namespace PipelineNet.Pipelines
         /// </summary>
         /// <typeparam name="TMiddleware"></typeparam>
         /// <returns></returns>
-        IAsyncPipeline<TParameter> Add<TMiddleware>()
-            where TMiddleware : IAsyncMiddleware<TParameter>;
+        IAsyncPipeline<TParameter> Add<TMiddleware>(Action<TMiddleware> configure = null)
+            where TMiddleware : IAsyncMiddleware<TParameter>, new();
 
         /// <summary>
         /// Execute the configured pipeline.
@@ -20,14 +20,5 @@ namespace PipelineNet.Pipelines
         /// <param name="parameter"></param>
         Task Execute(TParameter parameter);
 
-        /// <summary>
-        /// Adds a middleware type to be executed.
-        /// </summary>
-        /// <param name="middlewareType">The middleware type to be executed.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
-        /// not an implementation of <see cref="IMiddleware{TParameter}"/>.</exception>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
-        IAsyncPipeline<TParameter> Add(Type middlewareType);
     }
 }

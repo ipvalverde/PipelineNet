@@ -1,6 +1,10 @@
 ﻿using PipelineNet.Middleware;
-using PipelineNet.MiddlewareResolver;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace PipelineNet.Pipelines
 {
@@ -11,36 +15,27 @@ namespace PipelineNet.Pipelines
     /// <typeparam name="TParameter">The type that will be the input for all the middleware.</typeparam>
     public class Pipeline<TParameter> : BaseMiddlewareFlow<IMiddleware<TParameter>>, IPipeline<TParameter>
     {
-        /// <summary>
-        /// Creates a new instance of Pipeline.
-        /// </summary>
-        /// <param name="middlewareResolver">Resolver responsible for resolving instances out of middleware types.</param>
-        public Pipeline(IMiddlewareResolver middlewareResolver) : base(middlewareResolver)
-        {}
 
-        /// <summary>
+        public Pipeline()
+        {
+
+        }
+         /// <summary>
         /// Adds a middleware type to be executed.
         /// </summary>
         /// <typeparam name="TMiddleware"></typeparam>
         /// <returns></returns>
-        public IPipeline<TParameter> Add<TMiddleware>()
-            where TMiddleware : IMiddleware<TParameter>
+        public IPipeline<TParameter> Add<TMiddleware>(Action<TMiddleware> configure = null)
+            where TMiddleware : IMiddleware<TParameter>,new()
         {
-            MiddlewareTypes.Add(typeof(TMiddleware));
-            return this;
-        }
 
-        /// <summary>
-        /// Adds a middleware type to be executed.
-        /// </summary>
-        /// <param name="middlewareType">The middleware type to be executed.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
-        /// not an implementation of <see cref="IMiddleware{TParameter}"/>.</exception>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
-        public IPipeline<TParameter> Add(Type middlewareType)
-        {
-            base.AddMiddleware(middlewareType);
+            var middleware = new TMiddleware();
+            if (middleware==null){
+
+            }
+            configure?.Invoke(middleware);
+            Middleware.Add(middleware);
+
             return this;
         }
 
@@ -50,24 +45,16 @@ namespace PipelineNet.Pipelines
         /// <param name="parameter">The input that will be provided to all middleware.</param>
         public void Execute(TParameter parameter)
         {
-            if (MiddlewareTypes.Count == 0)
-                return;
 
-            int index = 0;
-            Action<TParameter> action = null;
-            action = (param) =>
-            {
-                var type = MiddlewareTypes[index];
-                var middleware = (IMiddleware<TParameter>)MiddlewareResolver.Resolve(type);
-
-                index++;
-                if (index == MiddlewareTypes.Count)
-                    action = (p) => { };
-
-                middleware.Run(param, action);
-            };
-
-            action(parameter);
+            Do(parameter,Middleware.GetEnumerator());
+            return;
+            
+            void Do(TParameter _param,IEnumerator<IMiddleware<TParameter>> e){
+                if(!e.MoveNext()) return;
+                e.Current.Run(_param,p=>{
+                    Do(p,e);
+                });
+            }
         }
     }
 }
