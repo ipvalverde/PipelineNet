@@ -199,7 +199,76 @@ When configuring a pipeline/chain of responsibility you define the types of the 
 needs to be instantiated, so `IMiddlewareResolver` is responsible for that. You can even create your own implementation, since the
 `ActivatorMiddlewareResolver` only works for parametersless constructors.
 
-I have plans to create implementations for [Simple Injector](https://github.com/simpleinjector/SimpleInjector) and [ASP.NET Core IoC](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-2.2).
+I have plans to create implementation for [Simple Injector](https://github.com/simpleinjector/SimpleInjector).
+
+## ServiceProvider implementation
+
+An implementation of the middleware resolver for `IServiceProvider` was provided by [@mariusz96](https://github.com/mariusz96). It is tested against Microsoft.Extensions.DependencyInjection `8.X.X`, but should work with any dependency injection container that implements `IServiceProvider`.
+
+You can grab it from nuget with:
+
+```
+Install-Package PipelineNet.ServiceProvider
+```
+
+And use it as follows:
+
+```C#
+services.AddScoped<IMyService, MyService>();
+
+public interface IMyService
+{
+    Task DoSomething();
+}
+
+public class MyService
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public MyService(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public Task DoSomething()
+    {
+        var exceptionHandlersChain = new AsyncResponsibilityChain<Exception>(
+                new ActivatorUtilitiesMiddlewareResolver(_serviceProvider)) // Pass ActivatorUtilitiesMiddlewareResolver
+            .Chain<OutOfMemoryAsyncExceptionHandler>()
+            .Chain<ArgumentAsyncExceptionHandler>();
+
+        // Do something with a chain
+    }
+}
+
+public class OutOfMemoryAsyncExceptionHandler : IAsyncMiddleware<Exception, bool>
+{
+    private readonly ILogger<OutOfMemoryAsyncExceptionHandler> _logger;
+
+    // The following constructor arguments will be provided by IServiceProvider
+    public OutOfMemoryAsyncExceptionHandler(ILogger<OutOfMemoryAsyncExceptionHandler> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task<bool> Run(Exception parameter, Func<Exception, Task<bool>> next)
+    {
+        _logger.LogInformation("Running OutOfMemoryAsyncExceptionHandler.");
+
+        if (parameter is OutOfMemoryException)
+        {
+            // Handle somehow
+            return true;
+        }
+
+        return await next(parameter);
+    }
+}
+```
+
+Note that `IServiceProvider` lifetime can vary based on the lifetime of the containing class. For example, if you resolve containing class from a scope, and it takes an `IServiceProvider`, it'll be a scoped instance.
+ 
+For more information on dependency injection, see: [Dependency injection - .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection).
 
 ### Unity implementation
 
