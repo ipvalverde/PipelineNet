@@ -5,7 +5,7 @@ using System;
 using System.Text.RegularExpressions;
 using Xunit;
 
-namespace PipelineNet.Tests.Pipeline
+namespace PipelineNet.Tests.Pipelines
 {
     public class PipelineTests
     {

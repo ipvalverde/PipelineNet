@@ -199,7 +199,7 @@ You may be wondering what is all this `ActivatorMiddlewareResolver` class being 
 This is a default implementation of the `IMiddlewareResolver`, which is used to create instances of the middleware types.
 
 When configuring a pipeline/chain of responsibility you define the types of the middleware, when the flow is executed those middleware
-needs to be instantiated, so `IMiddlewareResolver` is responsible for that. You can even create your own implementation, since the
+needs to be instantiated, so `IMiddlewareResolver` is responsible for that. Instantiated middleware are disposed automatically if they implement `IDisposable` or `IAsyncDisposable`. You can even create your own implementation, since the
 `ActivatorMiddlewareResolver` only works for parametersless constructors.
 
 ## ServiceProvider implementation
@@ -222,7 +222,7 @@ public interface IMyService
     Task DoSomething();
 }
 
-public class MyService
+public class MyService : IMyService
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -246,7 +246,7 @@ public class OutOfMemoryAsyncExceptionHandler : IAsyncMiddleware<Exception, bool
 {
     private readonly ILogger<OutOfMemoryAsyncExceptionHandler> _logger;
 
-    // The following constructor arguments will be provided by IServiceProvider
+    // The following constructor argument will be provided by IServiceProvider
     public OutOfMemoryAsyncExceptionHandler(ILogger<OutOfMemoryAsyncExceptionHandler> logger)
     {
         _logger = logger;

@@ -18,9 +18,20 @@ namespace PipelineNet.ServiceProvider.MiddlewareResolver
                 "An instance of IServiceProvider must be provided."); ;
         }
 
-        public object Resolve(Type type)
+        public MiddlewareResolverResult Resolve(Type type)
         {
-            return ActivatorUtilities.CreateInstance(_serviceProvider, type);
+            var middleware = ActivatorUtilities.CreateInstance(_serviceProvider, type);
+            bool isDisposable = middleware is IDisposable
+#if NETSTANDARD2_1_OR_GREATER
+                || middleware is IAsyncDisposable
+#endif
+                ;
+
+            return new MiddlewareResolverResult()
+            {
+                Middleware = middleware,
+                IsDisposable = isDisposable
+            };
         }
     }
 }

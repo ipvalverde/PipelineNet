@@ -13,6 +13,6 @@ namespace PipelineNet.MiddlewareResolver
         /// </summary>
         /// <param name="type">The middleware type that will be created.</param>
         /// <returns>An instance of the middleware.</returns>
-        object Resolve(Type type);
+        MiddlewareResolverResult Resolve(Type type);
     }
 }

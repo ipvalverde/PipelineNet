@@ -102,35 +102,48 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             {
             }
         }
+
+        public class DisposableMiddleware : IMiddleware<object>, IDisposable
+        {
+            public void Run(object parameter, Action<object> next)
+            {
+            }
+
+            public void Dispose()
+            {
+            }
+        }
         #endregion
 
         [Fact]
-        public void Resolve_ResolvesParameterlessConstructor()
+        public void Resolve_ResolvesParameterlessConstructorMiddleware()
         {
             var serviceProvider = new ServiceCollection()
                 .BuildServiceProvider(validateScopes: true);
             var resolver = new ActivatorUtilitiesMiddlewareResolver(serviceProvider);
 
-            var middleware = resolver.Resolve(typeof(ParameterlessConstructorMiddleware));
+            var resolverResult = resolver.Resolve(typeof(ParameterlessConstructorMiddleware));
 
-            Assert.NotNull(middleware);
+            Assert.NotNull(resolverResult.Middleware);
+            Assert.False(resolverResult.IsDisposable);
         }
 
         [Fact]
-        public void Resolve_ResolvesTransient()
+        public void Resolve_ResolvesTransientMiddleware()
         {
             var serviceProvider = new ServiceCollection()
                 .AddTransient<ITransientService, TransientService>()
                 .BuildServiceProvider(validateScopes: true);
             var resolver = new ActivatorUtilitiesMiddlewareResolver(serviceProvider);
 
-            var middleware = resolver.Resolve(typeof(TransientMiddleware));
+            var resolverResult = resolver.Resolve(typeof(TransientMiddleware));
 
-            Assert.NotNull(middleware);
+            Assert.NotNull(resolverResult.Middleware);
+            Assert.False(resolverResult.IsDisposable);
         }
 
         [Fact]
-        public void Resolve_ResolvesScoped()
+        public void Resolve_ResolvesScopedMiddleware()
         {
             var serviceProvider = new ServiceCollection()
                 .AddScoped<IScopedService, ScopedService>()
@@ -138,40 +151,57 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             var scope = serviceProvider.CreateScope();
             var resolver = new ActivatorUtilitiesMiddlewareResolver(scope.ServiceProvider);
 
-            var middleware = resolver.Resolve(typeof(ScopedMiddleware));
+            var resolverResult = resolver.Resolve(typeof(ScopedMiddleware));
 
-            Assert.NotNull(middleware);
+            Assert.NotNull(resolverResult.Middleware);
+            Assert.False(resolverResult.IsDisposable);
         }
 
         [Fact]
-        public void Resolve_ResolvesSingleton()
+        public void Resolve_ResolvesSingletonMiddleware()
         {
             var serviceProvider = new ServiceCollection()
                 .AddSingleton<ISingletonService, SingletonService>()
                 .BuildServiceProvider(validateScopes: true);
             var resolver = new ActivatorUtilitiesMiddlewareResolver(serviceProvider);
 
-            var middleware = resolver.Resolve(typeof(SingletonMiddleware));
+            var resolverResult = resolver.Resolve(typeof(SingletonMiddleware));
 
-            Assert.NotNull(middleware);
+            Assert.NotNull(resolverResult.Middleware);
+            Assert.False(resolverResult.IsDisposable);
         }
 
         [Fact]
-        public void Resolve_TransientGetsDisposed()
+        public void Resolve_ResolvesDisposableMiddleware()
+        {
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton<ISingletonService, SingletonService>()
+                .BuildServiceProvider(validateScopes: true);
+            var resolver = new ActivatorUtilitiesMiddlewareResolver(serviceProvider);
+
+            var resolverResult = resolver.Resolve(typeof(DisposableMiddleware));
+
+            Assert.NotNull(resolverResult.Middleware);
+            Assert.True(resolverResult.IsDisposable);
+        }
+
+        [Fact]
+        public void Resolve_TransientServiceGetsDisposed()
         {
             var serviceProvider = new ServiceCollection()
                 .AddTransient<ITransientService, TransientService>()
                 .BuildServiceProvider(validateScopes: true);
             var resolver = new ActivatorUtilitiesMiddlewareResolver(serviceProvider);
-            
-            var middleware = (TransientMiddleware)resolver.Resolve(typeof(TransientMiddleware));
+
+            var resolverResult = resolver.Resolve(typeof(TransientMiddleware));
+            var middleware = (TransientMiddleware)resolverResult.Middleware;
             serviceProvider.Dispose();
 
             Assert.True(middleware.Service.Disposed);
         }
 
         [Fact]
-        public void Resolve_ScopedGetsDisposed()
+        public void Resolve_ScopedServiceGetsDisposed()
         {
             var serviceProvider = new ServiceCollection()
                 .AddScoped<IScopedService, ScopedService>()
@@ -179,21 +209,23 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             var scope = serviceProvider.CreateScope();
             var resolver = new ActivatorUtilitiesMiddlewareResolver(scope.ServiceProvider);
 
-            var middleware = (ScopedMiddleware)resolver.Resolve(typeof(ScopedMiddleware));
+            var resolverResult = resolver.Resolve(typeof(ScopedMiddleware));
+            var middleware = (ScopedMiddleware)resolverResult.Middleware;
             scope.Dispose();
 
             Assert.True(middleware.Service.Disposed);
         }
 
         [Fact]
-        public void Resolve_SingletonGetsDisposed()
+        public void Resolve_SingletonServiceGetsDisposed()
         {
             var serviceProvider = new ServiceCollection()
                 .AddSingleton<ISingletonService, SingletonService>()
                 .BuildServiceProvider(validateScopes: true);
             var resolver = new ActivatorUtilitiesMiddlewareResolver(serviceProvider);
 
-            var middleware = (SingletonMiddleware)resolver.Resolve(typeof(SingletonMiddleware));
+            var resolverResult = resolver.Resolve(typeof(SingletonMiddleware));
+            var middleware = (SingletonMiddleware)resolverResult.Middleware;
             serviceProvider.Dispose();
 
             Assert.True(middleware.Service.Disposed);

@@ -8,9 +8,20 @@ namespace PipelineNet.MiddlewareResolver
     /// </summary>
     public class ActivatorMiddlewareResolver : IMiddlewareResolver
     {
-        public object Resolve(Type type)
+        public MiddlewareResolverResult Resolve(Type type)
         {
-            return Activator.CreateInstance(type);
+            var middleware = Activator.CreateInstance(type);
+            bool isDisposable = middleware is IDisposable
+#if NETSTANDARD2_1_OR_GREATER
+                || middleware is IAsyncDisposable
+#endif
+                ;
+
+            return new MiddlewareResolverResult()
+            {
+                Middleware = middleware,
+                IsDisposable = isDisposable
+            };
         }
     }
 }

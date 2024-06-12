@@ -51,13 +51,30 @@ namespace PipelineNet.Pipelines
             action = async (param) =>
             {
                 var type = MiddlewareTypes[index];
-                var firstMiddleware = (IAsyncMiddleware<TParameter>)MiddlewareResolver.Resolve(type);
+                var resolverResult = MiddlewareResolver.Resolve(type);
+                var middleware = (IAsyncMiddleware<TParameter>)resolverResult.Middleware;
 
                 index++;
                 if (index == MiddlewareTypes.Count)
                     action = (p) => Task.FromResult(0);
 
-                await firstMiddleware.Run(param, action).ConfigureAwait(false);
+                await middleware.Run(param, action).ConfigureAwait(false);
+
+                if (resolverResult.IsDisposable)
+                {
+#if NETSTANDARD2_1_OR_GREATER
+                    if (middleware is IAsyncDisposable asyncDisposable)
+                    {
+                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+#endif
+                        ((IDisposable)middleware).Dispose();
+#if NETSTANDARD2_1_OR_GREATER
+                    }
+#endif
+                }
             };
 
             await action(parameter).ConfigureAwait(false);
