@@ -1,5 +1,4 @@
 ﻿using PipelineNet.Middleware;
-using PipelineNet.MiddlewareResolver;
 using PipelineNet.Pipelines;
 using System;
 using System.Text.RegularExpressions;
@@ -76,7 +75,7 @@ namespace PipelineNet.Tests.Pipelines
         [Fact]
         public async Task Execute_RunSeveralMiddleware_SuccessfullyExecute()
         {
-            var pipeline = new AsyncPipeline<PersonModel>(new ActivatorMiddlewareResolver())
+            var pipeline = new AsyncPipeline<PersonModel>()
                 .Add<PersonWithEvenId>()
                 .Add<PersonWithOddId>()
                 .Add<PersonWithEmailName>()
@@ -97,7 +96,7 @@ namespace PipelineNet.Tests.Pipelines
         [Fact]
         public async Task Execute_RunSamePipelineTwice_SuccessfullyExecute()
         {
-            var pipeline = new AsyncPipeline<PersonModel>(new ActivatorMiddlewareResolver())
+            var pipeline = new AsyncPipeline<PersonModel>()
                 .Add<PersonWithEvenId>()
                 .Add<PersonWithOddId>()
                 .Add<PersonWithEmailName>()
@@ -127,40 +126,6 @@ namespace PipelineNet.Tests.Pipelines
 
             // Check if the level of 'personModel' is 4, which is configured by 'PersonWithGenderProperty' middleware.
             Assert.Equal(4, personModel.Level);
-        }
-
-        [Fact]
-        public async Task Execute_RunSeveralMiddlewareWithTwoBeingDynamiccalyAdded_SuccessfullyExecute()
-        {
-            var pipeline = new AsyncPipeline<PersonModel>(new ActivatorMiddlewareResolver())
-                .Add<PersonWithEvenId>()
-                .Add(typeof(PersonWithOddId))
-                .Add<PersonWithEmailName>()
-                .Add(typeof(PersonWithGenderProperty));
-
-            // This person model has a gender, so the last middleware will be the one handling the input.
-            var personModel = new PersonModel
-            {
-                Gender = Gender.Female
-            };
-
-            await pipeline.Execute(personModel);
-
-            // Check if the level of 'personModel' is 4, which is configured by 'PersonWithGenderProperty' middleware.
-            Assert.Equal(4, personModel.Level);
-        }
-
-        /// <summary>
-        /// Tests the <see cref="AsyncPipeline{TParameter}.Add(Type)"/> method.
-        /// </summary>
-        [Fact]
-        public void Add_AddTypeThatIsNotAMiddleware_ThrowsException()
-        {
-            var pipeline = new AsyncPipeline<PersonModel>(new ActivatorMiddlewareResolver());
-            Assert.Throws<ArgumentException>(() =>
-            {
-                pipeline.Add(typeof(AsyncPipelineTests));
-            });
         }
     }
 }
