@@ -4,6 +4,11 @@ using System.Threading.Tasks;
 
 namespace PipelineNet.Pipelines
 {
+    /// <summary>
+    /// An asynchronous pipeline stores middleware that are executed when <see cref="Execute(TParameter)"/> is called.
+    /// The middleware are executed in the same order they are added.
+    /// </summary>
+    /// <typeparam name="TParameter">The type that will be the input for all the middleware.</typeparam>
     public interface IAsyncPipeline<TParameter>
     {
         /// <summary>

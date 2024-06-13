@@ -4,7 +4,7 @@ using PipelineNet.Middleware;
 
 namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
 {
-    public class ActivatorUtilitiesMiddlewareResolverTest
+    public class ActivatorUtilitiesMiddlewareResolverTests
     {
         #region Service defintions
         public interface ITransientService
@@ -186,7 +186,7 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
         }
 
         [Fact]
-        public void Resolve_TransientServiceGetsDisposed()
+        public void Resolve_TransientServiceGetsDisposed1()
         {
             var serviceProvider = new ServiceCollection()
                 .AddTransient<ITransientService, TransientService>()
@@ -196,6 +196,22 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             var resolverResult = resolver.Resolve(typeof(TransientMiddleware));
             var middleware = (TransientMiddleware)resolverResult.Middleware;
             serviceProvider.Dispose();
+
+            Assert.True(middleware.Service.Disposed);
+        }
+
+        [Fact]
+        public void Resolve_TransientServiceGetsDisposed2()
+        {
+            var serviceProvider = new ServiceCollection()
+                .AddTransient<ITransientService, TransientService>()
+                .BuildServiceProvider(validateScopes: true);
+            var scope = serviceProvider.CreateScope();
+            var resolver = new ActivatorUtilitiesMiddlewareResolver(scope.ServiceProvider);
+
+            var resolverResult = resolver.Resolve(typeof(TransientMiddleware));
+            var middleware = (TransientMiddleware)resolverResult.Middleware;
+            scope.Dispose();
 
             Assert.True(middleware.Service.Disposed);
         }
@@ -229,6 +245,17 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             serviceProvider.Dispose();
 
             Assert.True(middleware.Service.Disposed);
+        }
+
+        [Fact]
+        public void Resolve_ThrowsWhenServiceIsNotRegistered()
+        {
+            var serviceProvider = new ServiceCollection()
+                .BuildServiceProvider(validateScopes: true);
+            var resolver = new ActivatorUtilitiesMiddlewareResolver(serviceProvider);
+
+            Assert.ThrowsAny<Exception>(() =>
+                resolver.Resolve(typeof(TransientMiddleware)));
         }
     }
 }
