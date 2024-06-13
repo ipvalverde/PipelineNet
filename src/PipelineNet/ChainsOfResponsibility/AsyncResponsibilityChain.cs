@@ -61,10 +61,11 @@ namespace PipelineNet.ChainsOfResponsibility
 
             int index = 0;
             Func<TParameter, Task<TReturn>> func = null;
-            func = (param) =>
+            func = async (param) =>
             {
                 var type = MiddlewareTypes[index];
-                var middleware = (IAsyncMiddleware<TParameter, TReturn>)MiddlewareResolver.Resolve(type);
+                var resolverResult = MiddlewareResolver.Resolve(type);
+                var middleware = (IAsyncMiddleware<TParameter, TReturn>)resolverResult.Middleware;
 
                 index++;
                 // If the current instance of middleware is the last one in the list,
@@ -73,7 +74,25 @@ namespace PipelineNet.ChainsOfResponsibility
                 if (index == MiddlewareTypes.Count)
                     func = this._finallyFunc ?? ((p) => Task.FromResult(default(TReturn)));
 
-                return middleware.Run(param, func);
+                var result = await middleware.Run(param, func);
+
+                if (resolverResult.IsDisposable)
+                {
+#if NETSTANDARD2_1_OR_GREATER
+                    if (middleware is IAsyncDisposable asyncDisposable)
+                    {
+                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+#endif
+                        ((IDisposable)middleware).Dispose();
+#if NETSTANDARD2_1_OR_GREATER
+                    }
+#endif
+                }
+
+                return result;
             };
 
             return await func(parameter).ConfigureAwait(false);

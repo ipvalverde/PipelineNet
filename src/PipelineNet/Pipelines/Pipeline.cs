@@ -58,13 +58,37 @@ namespace PipelineNet.Pipelines
             action = (param) =>
             {
                 var type = MiddlewareTypes[index];
-                var middleware = (IMiddleware<TParameter>)MiddlewareResolver.Resolve(type);
+                var resolverResult = MiddlewareResolver.Resolve(type);
+                var middleware = (IMiddleware<TParameter>)resolverResult.Middleware;
 
                 index++;
                 if (index == MiddlewareTypes.Count)
                     action = (p) => { };
 
                 middleware.Run(param, action);
+
+                if (resolverResult.IsDisposable)
+                {
+                    if (middleware is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+#if NETSTANDARD2_1_OR_GREATER
+                    else if (middleware is IAsyncDisposable)
+                    {
+                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type only implements IAsyncDisposable. " +
+                            "Use AsyncPipeline to execute the configured pipeline.");
+                    }
+#endif
+                    else
+                    {
+                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type does not implement IDisposable " +
+#if NETSTANDARD2_1_OR_GREATER
+                            " or IAsyncDisposable" +
+#endif
+                            ".");
+                    }
+                }
             };
 
             action(parameter);

@@ -38,23 +38,26 @@ public class OutOfMemoryExceptionHandler : IMiddleware<Exception, bool>
 {
     public bool Run(Exception parameter, Func<Exception, bool> next)
     {
-        if(parameter is OutOfMemoryException)
+        if (parameter is OutOfMemoryException)
         {
             // Handle somehow
             return true;
         }
+
         return next(parameter);
     }
 }
+
 public class ArgumentExceptionHandler : IMiddleware<Exception, bool>
 {
     public bool Run(Exception parameter, Func<Exception, bool> next)
     {
-        if(parameter is ArgumentException)
+        if (parameter is ArgumentException)
         {
             // Handle somehow
             return true;
         }
+
         return next(parameter);
     }
 }
@@ -68,28 +71,28 @@ var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new Activa
 Now your instance of `ResponsibilityChain` can be executed as many times as you want:
 ```C#
 // The following line will execute only the OutOfMemoryExceptionHandler, which is the first middleware.
-var result = exceptionHandlersChain.Execute(new OutOfMemoryException()); // result will be true
+var result = exceptionHandlersChain.Execute(new OutOfMemoryException()); // Result will be true
 
 // This one will execute the OutOfMemoryExceptionHandler first, and then the ArgumentExceptionHandler gets executed.
-result = exceptionHandlersChain.Execute(new ArgumentExceptionHandler()); // result will be true
+result = exceptionHandlersChain.Execute(new ArgumentExceptionHandler()); // Result will be true
 
 // If no middleware matches returns a value, the default of the return type is returned, which in the case of 'bool' is false.
-result = exceptionHandlersChain.Execute(new InvalidOperationException()); // result will be false
+result = exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be false
 ```
 You can even define a fallback function that will be executed after your entire chain:
 ```C#
-var exceptionHandlersChain = new ResponsibilityChain<Exception>(new ActivatorMiddlewareResolver())
+var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentExceptionHandler>()
     .Finally((parameter) =>
     {
-        // do something
+        // Do something
         return true;
-    })
+    });
 ```
 Now if the same line gets executed:
 ```C#
-var result = exceptionHandlersChain.Execute(new InvalidOperationException()); // result will be true
+var result = exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be true
 ```
 The result will be true because of the function defined in the `Finally` method.
 
@@ -114,7 +117,7 @@ We have four interfaces defining middleware:
 
 Besides the differences between those four kinds of middleware, they all have a similar structure, the definition of a method `Run`
 in which the first parameter is the parameter passed to the Pipeline/Chain of responsibility beind executed and the second one
-is an `Action` of `Func` to execute the next middleware in the flow. **It is importante to remember to invoke the next middleware
+is an `Action` of `Func` to execute the next middleware in the flow. **It is important to remember to invoke the next middleware
 by executing the `Action`/`Func` provided as the second parameter.** 
 
 ## Pipelines
@@ -148,7 +151,7 @@ var pipeline = new AsyncPipeline<Bitmap>(new ActivatorMiddlewareResolver())
 And the usage may be optimized:
 ```C#
 Bitmap image1 = (Bitmap) Image.FromFile("party-photo.png");
-Task task1 = pipeline.Execute(image1); // you can also simply use "await pipeline.Execute(image1);"
+Task task1 = pipeline.Execute(image1); // You can also simply use "await pipeline.Execute(image1);"
 
 Bitmap image2 = (Bitmap) Image.FromFile("marriage-photo.png");
 Task task2 = pipeline.Execute(image2);
@@ -170,25 +173,25 @@ will replace the previous function defined.
 As we already have an example of a chain of responsibility, here is an example using the asynchronous implementation:
 If you want to, you can use the asynchronous version, using asynchronous middleware. Changing the instantiation to:
 ```C#
-var exceptionHandlersChain = new AsyncResponsibilityChain<Exception>(new ActivatorMiddlewareResolver())
-    .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
-    .Chain<ArgumentExceptionHandler>()
+var exceptionHandlersChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+    .Chain<OutOfMemoryAsyncExceptionHandler>() // The order of middleware being chained matters
+    .Chain<ArgumentAsyncExceptionHandler>()
     .Finally((ex) =>
-        {
-            ex.Source = ExceptionSource;
-            return Task.FromResult(true);
-        });
+    {
+        ex.Source = ExceptionSource;
+        return Task.FromResult(true);
+    });
 ```
 And here is the execution:
 ```C#
 // The following line will execute only the OutOfMemoryExceptionHandler, which is the first middleware.
-bool result = await exceptionHandlersChain.Execute(new OutOfMemoryException()); // result will be true
+bool result = await exceptionHandlersChain.Execute(new OutOfMemoryException()); // Result will be true
 
 // This one will execute the OutOfMemoryExceptionHandler first, and then the ArgumentExceptionHandler gets executed.
-result = await exceptionHandlersChain.Execute(new ArgumentException()); // result will be true
+result = await exceptionHandlersChain.Execute(new ArgumentException()); // Result will be true
 
 // If no middleware matches returns a value, the default of the return type is returned, which in the case of 'bool' is false.
-result = await exceptionHandlersChain.Execute(new InvalidOperationException()); // result will be false
+result = await exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be false
 ```
 
 ## Middleware resolver
@@ -196,14 +199,81 @@ You may be wondering what is all this `ActivatorMiddlewareResolver` class being 
 This is a default implementation of the `IMiddlewareResolver`, which is used to create instances of the middleware types.
 
 When configuring a pipeline/chain of responsibility you define the types of the middleware, when the flow is executed those middleware
-needs to be instantiated, so `IMiddlewareResolver` is responsible for that. You can even create your own implementation, since the
+needs to be instantiated, so `IMiddlewareResolver` is responsible for that. Instantiated middleware are disposed automatically if they implement `IDisposable` or `IAsyncDisposable`. You can even create your own implementation, since the
 `ActivatorMiddlewareResolver` only works for parametersless constructors.
 
-I have plans to create implementations for [Simple Injector](https://github.com/simpleinjector/SimpleInjector) and [ASP.NET Core IoC](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-2.2).
+## ServiceProvider implementation
+
+An implementation of the middleware resolver for `IServiceProvider` was provided by [@mariusz96](https://github.com/mariusz96). It is tested against Microsoft.Extensions.DependencyInjection `8.X.X`, but should work with any dependency injection container that implements `IServiceProvider`.
+
+You can grab it from nuget with:
+
+```
+Install-Package PipelineNet.ServiceProvider
+```
+
+And use it as follows:
+
+```C#
+services.AddScoped<IMyService, MyService>();
+
+public interface IMyService
+{
+    Task DoSomething();
+}
+
+public class MyService : IMyService
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public MyService(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public Task DoSomething()
+    {
+        var exceptionHandlersChain = new AsyncResponsibilityChain<Exception, bool>(
+                new ActivatorUtilitiesMiddlewareResolver(_serviceProvider)) // Pass ActivatorUtilitiesMiddlewareResolver
+            .Chain<OutOfMemoryAsyncExceptionHandler>()
+            .Chain<ArgumentAsyncExceptionHandler>();
+
+        // Do something with a chain
+    }
+}
+
+public class OutOfMemoryAsyncExceptionHandler : IAsyncMiddleware<Exception, bool>
+{
+    private readonly ILogger<OutOfMemoryAsyncExceptionHandler> _logger;
+
+    // The following constructor argument will be provided by IServiceProvider
+    public OutOfMemoryAsyncExceptionHandler(ILogger<OutOfMemoryAsyncExceptionHandler> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task<bool> Run(Exception parameter, Func<Exception, Task<bool>> next)
+    {
+        _logger.LogInformation("Running OutOfMemoryAsyncExceptionHandler.");
+
+        if (parameter is OutOfMemoryException)
+        {
+            // Handle somehow
+            return true;
+        }
+
+        return await next(parameter);
+    }
+}
+```
+
+Note that `IServiceProvider` lifetime can vary based on the lifetime of the containing class. For example, if you resolve containing class from a scope, and it takes an `IServiceProvider`, it'll be a scoped instance.
+ 
+For more information on dependency injection, see: [Dependency injection - .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection).
 
 ### Unity implementation
 
-An implementation of the [middleware resolver for Unity](https://github.com/ShaneYu/PipelineNet.Unity) was kindly provided by [@ShaneYu](https://github.com/ShaneYu). It is tested against Unity.Container `5.8.X`, you can grab it from nuget with:
+An implementation of the [middleware resolver for Unity](https://github.com/ShaneYu/PipelineNet.Unity) was kindly provided by [@ShaneYu](https://github.com/ShaneYu). It is tested against Unity.Container `5.X.X`, you can grab it from nuget with:
 
 ```
 Install-Package PipelineNet.Unity
