@@ -4,7 +4,7 @@ using PipelineNet.Middleware;
 
 namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
 {
-    public class ActivatorUtilitiesMiddlewareResolverTest
+    public class ActivatorUtilitiesMiddlewareResolverTests
     {
         #region Service defintions
         public interface ITransientService

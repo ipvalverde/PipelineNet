@@ -9,7 +9,7 @@ namespace PipelineNet.Pipelines
         where TParameter : class
     {
         public AsyncPipeline(IMiddlewareResolver middlewareResolver) : base(middlewareResolver)
-        {}
+        { }
 
         /// <summary>
         /// Adds a middleware type to be executed.
@@ -50,30 +50,51 @@ namespace PipelineNet.Pipelines
             Func<TParameter, Task> action = null;
             action = async (param) =>
             {
-                var type = MiddlewareTypes[index];
-                var resolverResult = MiddlewareResolver.Resolve(type);
-                var middleware = (IAsyncMiddleware<TParameter>)resolverResult.Middleware;
-
-                index++;
-                if (index == MiddlewareTypes.Count)
-                    action = (p) => Task.FromResult(0);
-
-                await middleware.Run(param, action).ConfigureAwait(false);
-
-                if (resolverResult.IsDisposable)
+                MiddlewareResolverResult resolverResult = null;
+                try
                 {
+                    var type = MiddlewareTypes[index];
+                    resolverResult = MiddlewareResolver.Resolve(type);
+                    var middleware = (IAsyncMiddleware<TParameter>)resolverResult.Middleware;
+
+                    index++;
+                    if (index == MiddlewareTypes.Count)
+                        action = (p) => Task.FromResult(0);
+
+                    if (resolverResult.IsDisposable && !(middleware is IDisposable
 #if NETSTANDARD2_1_OR_GREATER
-                    if (middleware is IAsyncDisposable asyncDisposable)
-                    {
-                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                    }
-                    else
-                    {
+                        || middleware is IAsyncDisposable
 #endif
-                        ((IDisposable)middleware).Dispose();
+                        ))
+                    {
+                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type does not implement IDisposable" +
 #if NETSTANDARD2_1_OR_GREATER
-                    }
+                            " or IAsyncDisposable" +
 #endif
+                            ".");
+                    }
+
+                    await middleware.Run(param, action).ConfigureAwait(false);
+                }
+                finally
+                {
+                    if (resolverResult != null
+                        && resolverResult.IsDisposable
+                        && resolverResult.Middleware != null)
+                    {
+                        var middleware = resolverResult.Middleware;
+#if NETSTANDARD2_1_OR_GREATER
+                        if (middleware is IAsyncDisposable asyncDisposable)
+                        {
+                            await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                        }
+                        else
+#endif
+                        if (middleware is IDisposable disposable)
+                        {
+                            disposable.Dispose();
+                        }
+                    }
                 }
             };
 

@@ -212,63 +212,58 @@ You can grab it from nuget with:
 Install-Package PipelineNet.ServiceProvider
 ```
 
-And use it as follows:
+Use it as follows:
 
 ```C#
-services.AddScoped<IMyService, MyService>();
+services.AddScoped<IMyPipelineFactory, MyPipelineFactory>();
 
-public interface IMyService
+public interface IMyPipelineFactory
 {
-    Task DoSomething();
+    IAsyncPipeline<Bitmap> CreatePipeline();
 }
 
-public class MyService : IMyService
+public class MyPipelineFactory : IMyPipelineFactory
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public MyService(IServiceProvider serviceProvider)
+    public MyPipelineFactory(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
-    public Task DoSomething()
+    public IAsyncPipeline<Bitmap> CreatePipeline()
     {
-        var exceptionHandlersChain = new AsyncResponsibilityChain<Exception, bool>(
-                new ActivatorUtilitiesMiddlewareResolver(_serviceProvider)) // Pass ActivatorUtilitiesMiddlewareResolver
-            .Chain<OutOfMemoryAsyncExceptionHandler>()
-            .Chain<ArgumentAsyncExceptionHandler>();
+        var resolver = new ActivatorUtilitiesMiddlewareResolver(_serviceProvider);
 
-        // Do something with a chain
+        return new AsyncPipeline<Bitmap>(resolver) // Pass ActivatorUtilitiesMiddlewareResolver
+            .Add<RoudCornersAsyncMiddleware>()
+            .Add<AddTransparencyAsyncMiddleware>()
+            .Add<AddWatermarkAsyncMiddleware>();
     }
 }
 
-public class OutOfMemoryAsyncExceptionHandler : IAsyncMiddleware<Exception, bool>
+public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 {
-    private readonly ILogger<OutOfMemoryAsyncExceptionHandler> _logger;
+    private readonly ILogger<RoudCornersAsyncMiddleware> _logger;
 
     // The following constructor argument will be provided by IServiceProvider
-    public OutOfMemoryAsyncExceptionHandler(ILogger<OutOfMemoryAsyncExceptionHandler> logger)
+    public RoudCornersAsyncMiddleware(ILogger<RoudCornersAsyncMiddleware> logger)
     {
         _logger = logger;
     }
 
-    public async Task<bool> Run(Exception parameter, Func<Exception, Task<bool>> next)
+    public async Task Run(Bitmap parameter, Func<Bitmap, Task> next)
     {
-        _logger.LogInformation("Running OutOfMemoryAsyncExceptionHandler.");
+        _logger.LogInformation("Running RoudCornersAsyncMiddleware.");
 
-        if (parameter is OutOfMemoryException)
-        {
-            // Handle somehow
-            return true;
-        }
-
-        return await next(parameter);
+        // Handle somehow
+        await next(parameter);
     }
 }
 ```
 
-Note that `IServiceProvider` lifetime can vary based on the lifetime of the containing class. For example, if you resolve containing class from a scope, and it takes an `IServiceProvider`, it'll be a scoped instance.
- 
+Note that `IServiceProvider` lifetime can vary based on the lifetime of the containing class. For example, if you resolve service from a scope, and it takes an `IServiceProvider`, it'll be a scoped instance.
+
 For more information on dependency injection, see: [Dependency injection - .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection).
 
 ### Unity implementation

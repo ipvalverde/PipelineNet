@@ -76,43 +76,48 @@ namespace PipelineNet.ChainsOfResponsibility
             Func<TParameter, TReturn> func = null;
             func = (param) =>
             {
-                var type = MiddlewareTypes[index];
-                var resolverResult = MiddlewareResolver.Resolve(type);
-                var middleware = (IMiddleware<TParameter, TReturn>)resolverResult.Middleware;
-
-                index++;
-                // If the current instance of middleware is the last one in the list,
-                // the "next" function is assigned to the finally function or a 
-                // default empty function.
-                if (index == MiddlewareTypes.Count)
-                    func = this._finallyFunc ?? ((p) => default(TReturn));
-
-                var result = middleware.Run(param, func);
-
-                if (resolverResult.IsDisposable)
+                MiddlewareResolverResult resolverResult = null;
+                try
                 {
-                    if (middleware is IDisposable disposable)
+                    var type = MiddlewareTypes[index];
+                    resolverResult = MiddlewareResolver.Resolve(type);
+                    var middleware = (IMiddleware<TParameter, TReturn>)resolverResult.Middleware;
+
+                    index++;
+                    // If the current instance of middleware is the last one in the list,
+                    // the "next" function is assigned to the finally function or a 
+                    // default empty function.
+                    if (index == MiddlewareTypes.Count)
+                        func = this._finallyFunc ?? ((p) => default(TReturn));
+
+                    if (resolverResult.IsDisposable && !(middleware is IDisposable))
                     {
-                        disposable.Dispose();
-                    }
 #if NETSTANDARD2_1_OR_GREATER
-                    else if (middleware is IAsyncDisposable)
-                    {
-                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type only implements IAsyncDisposable. " +
-                            "Use AsyncResponsibilityChain to execute the configured chain of responsibility.");
+                        if (middleware is IAsyncDisposable)
+                        {
+                            throw new InvalidOperationException($"'{middleware.GetType().FullName}' type only implements IAsyncDisposable." +
+                                " Use AsyncResponsibilityChain to execute the configured pipeline.");
+                        }
+#endif
+
+                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type does not implement IDisposable.");
                     }
-#endif
-                    else
+
+                    return middleware.Run(param, func);
+                }
+                finally
+                {
+                    if (resolverResult != null
+                        && resolverResult.IsDisposable
+                        && resolverResult.Middleware != null)
                     {
-                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type does not implement IDisposable " +
-#if NETSTANDARD2_1_OR_GREATER
-                            " or IAsyncDisposable" +
-#endif
-                            ".");
+                        var middleware = resolverResult.Middleware;
+                        if (middleware is IDisposable disposable)
+                        {
+                            disposable.Dispose();
+                        }
                     }
                 }
-
-                return result;
             };
 
             return func(parameter);
