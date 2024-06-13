@@ -188,7 +188,7 @@ And here is the execution:
 bool result = await exceptionHandlersChain.Execute(new OutOfMemoryException()); // Result will be true
 
 // This one will execute the OutOfMemoryExceptionHandler first, and then the ArgumentExceptionHandler gets executed.
-result = await exceptionHandlersChain.Execute(new ArgumentExceptionHandler()); // Result will be true
+result = await exceptionHandlersChain.Execute(new ArgumentException()); // Result will be true
 
 // If no middleware matches returns a value, the default of the return type is returned, which in the case of 'bool' is false.
 result = await exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be false
