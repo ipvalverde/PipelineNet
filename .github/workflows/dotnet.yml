@@ -1,0 +1,38 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      run: |
+          if [[ ${{ runner.os }} == 'windows-latest' ]]; then
+            dotnet-version="4.x"  # Set dotnet-version for Windows only
+          else
+            dotnet-version="6.0.x"  # Default to 6.0.x for non-Windows
+          fi
+          echo "Using dotnet version: $dotnet_version"  # Print for debugging
+          uses: actions/setup-dotnet@v4
+          with:
+            dotnet-version: $dotnet_version
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
