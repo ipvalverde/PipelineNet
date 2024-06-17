@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using PipelineNet.ServiceProvider.MiddlewareResolver;
+using PipelineNet.Extensions.DependencyInjection.MiddlewareResolver;
 using PipelineNet.Middleware;
 
-namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
+namespace PipelineNet.Extensions.DependencyInjection.Tests.MiddlewareResolver
 {
     public class ActivatorUtilitiesMiddlewareResolverTests
     {

@@ -7,9 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipelineNet", "PipelineNet\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PipelineNet.Tests", "PipelineNet.Tests\PipelineNet.Tests.csproj", "{559B8284-C4C9-4281-8DDD-688AF4DABEEB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipelineNet.ServiceProvider", "PipelineNet.ServiceProvider\PipelineNet.ServiceProvider.csproj", "{95B65398-BF95-4BBD-86C7-E13957FB1A1E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipelineNet.Extensions.DependencyInjection", "PipelineNet.Extensions.DependencyInjection\PipelineNet.Extensions.DependencyInjection.csproj", "{95B65398-BF95-4BBD-86C7-E13957FB1A1E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipelineNet.ServiceProvider.Tests", "PipelineNet.ServiceProvider.Tests\PipelineNet.ServiceProvider.Tests.csproj", "{FB784AAC-F0C7-4D5D-9C7A-3CBA3DFD31B0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipelineNet.Extensions.DependencyInjection.Tests", "PipelineNet.Extensions.DependencyInjection.Tests\PipelineNet.Extensions.DependencyInjection.Tests.csproj", "{FB784AAC-F0C7-4D5D-9C7A-3CBA3DFD31B0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

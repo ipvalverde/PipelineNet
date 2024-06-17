@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PipelineNet.ServiceProvider\PipelineNet.ServiceProvider.csproj" />
+    <ProjectReference Include="..\PipelineNet.Extensions.DependencyInjection\PipelineNet.Extensions.DependencyInjection.csproj" />
   </ItemGroup>
 
   <ItemGroup>

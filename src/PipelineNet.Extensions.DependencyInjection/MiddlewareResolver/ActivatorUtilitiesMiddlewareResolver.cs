@@ -2,11 +2,11 @@
 using PipelineNet.MiddlewareResolver;
 using System;
 
-namespace PipelineNet.ServiceProvider.MiddlewareResolver
+namespace PipelineNet.Extensions.DependencyInjection.MiddlewareResolver
 {
     /// <summary>
     /// An implementation of <see cref="IMiddlewareResolver"/> that creates
-    /// instances using the <see cref="Microsoft.Extensions.DependencyInjection.ActivatorUtilities"/>.
+    /// instances using the <see cref="ActivatorUtilities"/>.
     /// </summary>
     public class ActivatorUtilitiesMiddlewareResolver : IMiddlewareResolver
     {
