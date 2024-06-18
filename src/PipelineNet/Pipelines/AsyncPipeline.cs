@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 namespace PipelineNet.Pipelines
 {
     public class AsyncPipeline<TParameter> : BaseMiddlewareFlow<IAsyncMiddleware<TParameter>>, IAsyncPipeline<TParameter>
-        where TParameter : class
     {
         public AsyncPipeline(IMiddlewareResolver middlewareResolver) : base(middlewareResolver)
         { }
