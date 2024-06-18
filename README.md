@@ -204,7 +204,7 @@ needs to be instantiated, so `IMiddlewareResolver` is responsible for that. Inst
 
 ## Microsoft.Extensions.DependencyInjection implementation
 
-An implementation of the middleware resolver for `Microsoft.Extensions.DependencyInjection` was provided by [@mariusz96](https://github.com/mariusz96). It is tested against Microsoft.Extensions.DependencyInjection `8.X.X`, but should work with any dependency injection container that implements `IServiceProvider`.
+An implementation of the middleware resolver for `Microsoft.Extensions.DependencyInjection` was provided by [@mariusz96](https://github.com/mariusz96). It is tested against Microsoft.Extensions.DependencyInjection `8.X.X`.
 
 You can grab it from nuget with:
 
@@ -212,41 +212,41 @@ You can grab it from nuget with:
 Install-Package PipelineNet.Extensions.DependencyInjection
 ```
 
-Use it as follows:
+You can use it with `typed clients`. A `typed client` is a class that acceppts (among other services from the DI container) a configured pipeline or chain of responsibility in its' constructor:
 
 ```C#
-services.AddScoped<IMyPipelineFactory, MyPipelineFactory>();
-
-public interface IMyPipelineFactory
-{
-    IAsyncPipeline<Bitmap> CreatePipeline();
-}
-
-public class MyPipelineFactory : IMyPipelineFactory
-{
-    private readonly IServiceProvider _serviceProvider;
-
-    public MyPipelineFactory(IServiceProvider serviceProvider)
+services.AddPipelineNet(typeof(RoudCornersAsyncMiddleware).Assembly);
+services
+    .AddAsyncPipeline<Bitmap>(pipeline =>
     {
-        _serviceProvider = serviceProvider;
-    }
-
-    public IAsyncPipeline<Bitmap> CreatePipeline()
-    {
-        var resolver = new ActivatorUtilitiesMiddlewareResolver(_serviceProvider);
-
-        return new AsyncPipeline<Bitmap>(resolver) // Pass ActivatorUtilitiesMiddlewareResolver
+        pipeline
             .Add<RoudCornersAsyncMiddleware>()
             .Add<AddTransparencyAsyncMiddleware>()
             .Add<AddWatermarkAsyncMiddleware>();
+    })
+    .AddTypedClient<IMyPipeline, MyPipeline>();
+
+public interface IMyPipeline
+{
+}
+
+public class MyPipeline : IMyPipeline
+{
+    private readonly IAsyncPipeline<Bitmap> _pipeline;
+
+    public MyPipeline(IAsyncPipeline<Bitmap> pipeline)
+    {
+        _pipeline = pipeline;
     }
+
+    // Do something with a configured pipeline
 }
 
 public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 {
     private readonly ILogger<RoudCornersAsyncMiddleware> _logger;
 
-    // The following constructor argument will be provided by IServiceProvider
+    // The following constructor argument will be provided by the DI container
     public RoudCornersAsyncMiddleware(ILogger<RoudCornersAsyncMiddleware> logger)
     {
         _logger = logger;
@@ -262,9 +262,7 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 }
 ```
 
-Note that `IServiceProvider` lifetime can vary based on the lifetime of the containing class. For example, if you resolve service from a scope, and it takes an `IServiceProvider`, it'll be a scoped instance.
-
-For more information on dependency injection, see: [Dependency injection - .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection).
+You can bind multiple `typed clients` to a single configured pipeline or chain. `Typed clients` are registered as transients with the DI container.
 
 ### Unity implementation
 
