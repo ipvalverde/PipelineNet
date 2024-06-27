@@ -202,7 +202,7 @@ When configuring a pipeline/chain of responsibility you define the types of the 
 needs to be instantiated, so `IMiddlewareResolver` is responsible for that. Instantiated middleware are disposed automatically if they implement `IDisposable` or `IAsyncDisposable`. You can even create your own implementation, since the
 `ActivatorMiddlewareResolver` only works for parametersless constructors.
 
-## ServiceProvider implementation
+### ServiceProvider implementation
 
 An implementation of the middleware resolver for `IServiceProvider` was provided by [@mariusz96](https://github.com/mariusz96). It is tested against Microsoft.Extensions.DependencyInjection `8.X.X`, but should work with any dependency injection container that implements `IServiceProvider`.
 
