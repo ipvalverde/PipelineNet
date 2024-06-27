@@ -202,7 +202,7 @@ When configuring a pipeline/chain of responsibility you define the types of the 
 needs to be instantiated, so `IMiddlewareResolver` is responsible for that. Instantiated middleware are disposed automatically if they implement `IDisposable` or `IAsyncDisposable`. You can even create your own implementation, since the
 `ActivatorMiddlewareResolver` only works for parametersless constructors.
 
-## ServiceProvider implementation
+### ServiceProvider implementation
 
 An implementation of the middleware resolver for `IServiceProvider` was provided by [@mariusz96](https://github.com/mariusz96). It is tested against Microsoft.Extensions.DependencyInjection `8.X.X`, but should work with any dependency injection container that implements `IServiceProvider`.
 
@@ -212,63 +212,55 @@ You can grab it from nuget with:
 Install-Package PipelineNet.ServiceProvider
 ```
 
-And use it as follows:
+Use it as follows:
 
 ```C#
-services.AddScoped<IMyService, MyService>();
+services.AddScoped<IMyPipelineFactory, MyPipelineFactory>();
 
-public interface IMyService
+public interface IMyPipelineFactory
 {
-    Task DoSomething();
+    IAsyncPipeline<Bitmap> CreatePipeline();
 }
 
-public class MyService : IMyService
+public class MyPipelineFactory : IMyPipelineFactory
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public MyService(IServiceProvider serviceProvider)
+    public MyPipelineFactory(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
-    public Task DoSomething()
+    public IAsyncPipeline<Bitmap> CreatePipeline()
     {
-        var exceptionHandlersChain = new AsyncResponsibilityChain<Exception, bool>(
-                new ActivatorUtilitiesMiddlewareResolver(_serviceProvider)) // Pass ActivatorUtilitiesMiddlewareResolver
-            .Chain<OutOfMemoryAsyncExceptionHandler>()
-            .Chain<ArgumentAsyncExceptionHandler>();
-
-        // Do something with a chain
+        return new AsyncPipeline<Bitmap>(new ActivatorUtilitiesMiddlewareResolver(_serviceProvider)) // Pass ActivatorUtilitiesMiddlewareResolver
+            .Add<RoudCornersAsyncMiddleware>()
+            .Add<AddTransparencyAsyncMiddleware>()
+            .Add<AddWatermarkAsyncMiddleware>();
     }
 }
 
-public class OutOfMemoryAsyncExceptionHandler : IAsyncMiddleware<Exception, bool>
+public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 {
-    private readonly ILogger<OutOfMemoryAsyncExceptionHandler> _logger;
+    private readonly ILogger<RoudCornersAsyncMiddleware> _logger;
 
     // The following constructor argument will be provided by IServiceProvider
-    public OutOfMemoryAsyncExceptionHandler(ILogger<OutOfMemoryAsyncExceptionHandler> logger)
+    public RoudCornersAsyncMiddleware(ILogger<RoudCornersAsyncMiddleware> logger)
     {
         _logger = logger;
     }
 
-    public async Task<bool> Run(Exception parameter, Func<Exception, Task<bool>> next)
+    public async Task Run(Bitmap parameter, Func<Bitmap, Task> next)
     {
-        _logger.LogInformation("Running OutOfMemoryAsyncExceptionHandler.");
-
-        if (parameter is OutOfMemoryException)
-        {
-            // Handle somehow
-            return true;
-        }
-
-        return await next(parameter);
+        _logger.LogInformation("Running RoudCornersAsyncMiddleware.");
+        // Handle somehow
+        await next(parameter);
     }
 }
 ```
 
-Note that `IServiceProvider` lifetime can vary based on the lifetime of the containing class. For example, if you resolve containing class from a scope, and it takes an `IServiceProvider`, it'll be a scoped instance.
- 
+Note that `IServiceProvider` lifetime can vary based on the lifetime of the containing class. For example, if you resolve service from a scope, and it takes an `IServiceProvider`, it'll be a scoped instance.
+
 For more information on dependency injection, see: [Dependency injection - .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection).
 
 ### Unity implementation

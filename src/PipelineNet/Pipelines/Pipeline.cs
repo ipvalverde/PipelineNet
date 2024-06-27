@@ -57,36 +57,44 @@ namespace PipelineNet.Pipelines
             Action<TParameter> action = null;
             action = (param) =>
             {
-                var type = MiddlewareTypes[index];
-                var resolverResult = MiddlewareResolver.Resolve(type);
-                var middleware = (IMiddleware<TParameter>)resolverResult.Middleware;
-
-                index++;
-                if (index == MiddlewareTypes.Count)
-                    action = (p) => { };
-
-                middleware.Run(param, action);
-
-                if (resolverResult.IsDisposable)
+                MiddlewareResolverResult resolverResult = null;
+                try
                 {
-                    if (middleware is IDisposable disposable)
+                    var type = MiddlewareTypes[index];
+                    resolverResult = MiddlewareResolver.Resolve(type);
+                    var middleware = (IMiddleware<TParameter>)resolverResult.Middleware;
+
+                    index++;
+                    if (index == MiddlewareTypes.Count)
+                        action = (p) => { };
+
+                    if (resolverResult.IsDisposable && !(middleware is IDisposable))
                     {
-                        disposable.Dispose();
-                    }
 #if NETSTANDARD2_1_OR_GREATER
-                    else if (middleware is IAsyncDisposable)
-                    {
-                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type only implements IAsyncDisposable. " +
-                            "Use AsyncPipeline to execute the configured pipeline.");
+                        if (middleware is IAsyncDisposable)
+                        {
+                            throw new InvalidOperationException($"'{middleware.GetType().FullName}' type only implements IAsyncDisposable." +
+                                " Use AsyncPipeline to execute the configured pipeline.");
+                        }
+#endif
+
+                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type does not implement IDisposable.");
                     }
-#endif
-                    else
+
+                    middleware.Run(param, action);
+                }
+                finally
+                {
+                    if (resolverResult != null && resolverResult.IsDisposable)
                     {
-                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type does not implement IDisposable " +
-#if NETSTANDARD2_1_OR_GREATER
-                            " or IAsyncDisposable" +
-#endif
-                            ".");
+                        var middleware = resolverResult.Middleware;
+                        if (middleware != null)
+                        {
+                            if (middleware is IDisposable disposable)
+                            {
+                                disposable.Dispose();
+                            }
+                        }
                     }
                 }
             };
