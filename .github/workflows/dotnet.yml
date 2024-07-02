@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - working-directory: src
     - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -23,8 +24,8 @@ jobs:
           6.0.x
           8.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore PipelineNet.sln
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore PipelineNet.sln
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal PipelineNet.sln
