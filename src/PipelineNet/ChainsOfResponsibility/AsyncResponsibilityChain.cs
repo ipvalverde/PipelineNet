@@ -63,36 +63,56 @@ namespace PipelineNet.ChainsOfResponsibility
             Func<TParameter, Task<TReturn>> func = null;
             func = async (param) =>
             {
-                var type = MiddlewareTypes[index];
-                var resolverResult = MiddlewareResolver.Resolve(type);
-                var middleware = (IAsyncMiddleware<TParameter, TReturn>)resolverResult.Middleware;
-
-                index++;
-                // If the current instance of middleware is the last one in the list,
-                // the "next" function is assigned to the finally function or a 
-                // default empty function.
-                if (index == MiddlewareTypes.Count)
-                    func = this._finallyFunc ?? ((p) => Task.FromResult(default(TReturn)));
-
-                var result = await middleware.Run(param, func);
-
-                if (resolverResult.IsDisposable)
+                MiddlewareResolverResult resolverResult = null;
+                try
                 {
-#if NETSTANDARD2_1_OR_GREATER
-                    if (middleware is IAsyncDisposable asyncDisposable)
-                    {
-                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                    }
-                    else
-                    {
-#endif
-                        ((IDisposable)middleware).Dispose();
-#if NETSTANDARD2_1_OR_GREATER
-                    }
-#endif
-                }
+                    var type = MiddlewareTypes[index];
+                    resolverResult = MiddlewareResolver.Resolve(type);
+                    var middleware = (IAsyncMiddleware<TParameter, TReturn>)resolverResult.Middleware;
 
-                return result;
+                    index++;
+                    // If the current instance of middleware is the last one in the list,
+                    // the "next" function is assigned to the finally function or a 
+                    // default empty function.
+                    if (index == MiddlewareTypes.Count)
+                        func = this._finallyFunc ?? ((p) => Task.FromResult(default(TReturn)));
+
+                    if (resolverResult.IsDisposable && !(middleware is IDisposable
+#if NETSTANDARD2_1_OR_GREATER
+                        || middleware is IAsyncDisposable
+#endif
+    ))
+                    {
+                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type does not implement IDisposable" +
+#if NETSTANDARD2_1_OR_GREATER
+                            " or IAsyncDisposable" +
+#endif
+                            ".");
+                    }
+
+                    return await middleware.Run(param, func).ConfigureAwait(false);
+                }
+                finally
+                {
+                    if (resolverResult != null && resolverResult.IsDisposable)
+                    {
+                        var middleware = resolverResult.Middleware;
+                        if (middleware != null)
+                        {
+#if NETSTANDARD2_1_OR_GREATER
+                            if (middleware is IAsyncDisposable asyncDisposable)
+                            {
+                                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                            }
+                            else
+#endif
+                            if (middleware is IDisposable disposable)
+                            {
+                                disposable.Dispose();
+                            }
+                        }
+                    }
+                }
             };
 
             return await func(parameter).ConfigureAwait(false);
