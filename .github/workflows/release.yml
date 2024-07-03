@@ -15,12 +15,13 @@ jobs:
     - name: Create package
       run: |
         dotnet pack $(project_path) -c Release --include-symbols -o artifacts -p:PackageVersion=${{ github.event.release.tag_name }} -p:PackageReleaseNotes=${{ github.event.release.description }}
+      env:
+        project_path: src/PipelineNet/PipelineNet.csproj
 
     - name: Upload NuGet package (requires secret)
       run: |
         dotnet nuget push artifacts/PipelineNet.${{ github.event.release.tag_name }}.nupkg --source $NUGET_SOURCE --api-key $NUGET_API_KEY
         dotnet nuget push artifacts/PipelineNet.${{ github.event.release.tag_name }}.symbols.nupkg --source $NUGET_SOURCE --api-key $NUGET_API_KEY
       env:
-        project_path: src/PipelineNet/PipelineNet.csproj
         NUGET_SOURCE: ${{ secrets.NUGET_SOURCE }}  # Replace with your NuGet source (public or private)
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}  # Replace with your NuGet API key (stored as secret)
