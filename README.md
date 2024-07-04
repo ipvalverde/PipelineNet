@@ -1,5 +1,5 @@
 # PipelineNet
-[![Build status](https://github.com/ipvalverde/PipelineNet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/ipvalverde/PipelineNet/actions/workflows/dotnet.yml)
+[![Build status](https://github.com/ipvalverde/PipelineNet/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/ipvalverde/PipelineNet/actions/workflows/build.yml)
 
 Pipeline net is a micro framework that helps you implement the pipeline and chain of responsibility patterns. With PipelineNet you can easily separate business logic and extend your application.
 Pipelines can be used to execute a series of middleware sequentially without expecting a return, while chains of responsibilities do the same thing but expecting a return. And you can do it all asynchronously too.
