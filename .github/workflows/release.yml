@@ -4,7 +4,7 @@ name: Release Nuget Package
 
 on:
   release:
-    types: [published, prereleased, released]
+    types: [published]
 
 jobs:
   publish:
@@ -12,23 +12,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Get version from release
-      run: |
-        version=${{ github.event.release.tag_name }}
-        version=${version#"v"}  # Remove "v" from the beginning
-        echo "Version without 'v': $version"
     
-    - name: Create package
-      run: |
-        dotnet pack $project_path -c Release --include-symbols -o artifacts -p:PackageVersion=$version
-      env:
-        project_path: src/PipelineNet/PipelineNet.csproj
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
 
-    - name: Upload NuGet package (requires secret)
-      run: |
-        dotnet nuget push artifacts/PipelineNet.$version.nupkg --source $NUGET_SOURCE --api-key $NUGET_API_KEY
-        dotnet nuget push artifacts/PipelineNet.$version.symbols.nupkg --source $NUGET_SOURCE --api-key $NUGET_API_KEY
+    - name: Build and publish
+      shell: pwsh
+      run: ./build.ps1 ${{ github.event.release.tag_name }} ${{ github.event.release.description }} ${{ github.event.release.is_pre_release }}
       env:
         NUGET_SOURCE: ${{ secrets.NUGET_SOURCE }}  # Replace with your NuGet source (public or private)
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}  # Replace with your NuGet API key (stored as secret)
