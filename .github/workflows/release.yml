@@ -1,6 +1,6 @@
 # This workflow will publish the nuget packages when a relase is created
 
-name: .NET
+name: Release Nuget Package
 
 on:
   release:
@@ -12,16 +12,23 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Get version from release
+      run: |
+        version=${{ github.event.release.tag_name }}
+        version=${version#"v"}  # Remove "v" from the beginning
+        echo "Version without 'v': $version"
+    
     - name: Create package
       run: |
-        dotnet pack $project_path -c Release --include-symbols -o artifacts -p:PackageVersion=${{ github.event.release.tag_name }}
+        dotnet pack $project_path -c Release --include-symbols -o artifacts -p:PackageVersion=$version
       env:
         project_path: src/PipelineNet/PipelineNet.csproj
 
     - name: Upload NuGet package (requires secret)
       run: |
-        dotnet nuget push artifacts/PipelineNet.${{ github.event.release.tag_name }}.nupkg --source $NUGET_SOURCE --api-key $NUGET_API_KEY
-        dotnet nuget push artifacts/PipelineNet.${{ github.event.release.tag_name }}.symbols.nupkg --source $NUGET_SOURCE --api-key $NUGET_API_KEY
+        dotnet nuget push artifacts/PipelineNet.$version.nupkg --source $NUGET_SOURCE --api-key $NUGET_API_KEY
+        dotnet nuget push artifacts/PipelineNet.$version.symbols.nupkg --source $NUGET_SOURCE --api-key $NUGET_API_KEY
       env:
         NUGET_SOURCE: ${{ secrets.NUGET_SOURCE }}  # Replace with your NuGet source (public or private)
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}  # Replace with your NuGet API key (stored as secret)
