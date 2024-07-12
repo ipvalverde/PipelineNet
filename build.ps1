@@ -3,7 +3,10 @@ param (
     [string] $packageVersion,
 
     [Parameter(Mandatory=$true)]
-    [string] $releaseNotes
+    [string] $releaseNotes,
+
+    [Parameter(Mandatory=$true)]
+    [string] $isPreRelease
 )
 
 function Invoke-CommandWithLog {
@@ -25,6 +28,11 @@ Write-Host "`nGit version tag: '$packageVersion'`n"
 if ($packageVersion.StartsWith("v")) {
     $packageVersion = $packageVersion.Substring(1)
 }
+if ([System.Convert]::ToBoolean($isPreRelease)) {
+    $packageVersion += "-alpha"
+}
+
+Write-Host "Package version: $packageVersion" -ForegroundColor Yellow
 
 Invoke-CommandWithLog -Command "dotnet build $solutionPath -c Release$packageVersionCommandArgument" -CommandName "build"
 Invoke-CommandWithLog -Command "dotnet test $testProjectPath -c Release --no-build" -CommandName "test"
