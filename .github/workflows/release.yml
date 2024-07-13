@@ -22,7 +22,7 @@ jobs:
       id: extract_release_details
       run: |
         echo "RELEASE_TAG=$(echo ${{ github.event.release.tag_name }})" >> $GITHUB_ENV
-        echo "RELEASE_NOTES=$(echo ${{ github.event.release.body }})" >> $GITHUB_ENV
+        echo "RELEASE_NOTES=$(gh release view v0.10.0 --json body --jq '.body')" >> $GITHUB_ENV
         echo "IS_PRE_RELEASE=$(echo ${{ github.event.release.prerelease }})" >> $GITHUB_ENV
 
     - name: Build and publish
