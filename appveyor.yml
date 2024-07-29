@@ -1,8 +1,0 @@
-version: 1.0.{build}
-image: Visual Studio 2017
-build_script:
-- cmd: PowerShell -Version 5.0 .\build.ps1
-test: off
-environment:
-  MYGET_KEY:
-    secure: ePaWJdJRreMdUF7tkjCxouno7mrN3nO4x9Peu5fo1nfRwcVNG8p36WEkKkgsGt6v
