@@ -18,16 +18,9 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Extract release details
-      id: extract_release_details
-      run: |
-        echo "RELEASE_TAG=$(echo ${{ github.event.release.tag_name }})" >> $GITHUB_ENV
-        echo "RELEASE_NOTES=$(gh release view v0.10.0 --json body --jq '.body')" >> $GITHUB_ENV
-        echo "IS_PRE_RELEASE=$(echo ${{ github.event.release.prerelease }})" >> $GITHUB_ENV
-
     - name: Build and publish
       shell: pwsh
-      run: ./build.ps1 ${{ env.RELEASE_TAG }} ${{ env.RELEASE_NOTES }} ${{ env.IS_PRE_RELEASE }}
+      run: ./build.ps1 ${{ env.RELEASE_TAG }}
       env:
         NUGET_SOURCE: ${{ secrets.NUGET_SOURCE }}  # Replace with your NuGet source (public or private)
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}  # Replace with your NuGet API key (stored as secret)

@@ -12,20 +12,8 @@
     <Authors>Israel Valverde</Authors>
     <Description>A micro framework that helps you implement pipeline and chain of responsibility patterns.</Description>
     <PackageProjectUrl>https://github.com/ipvalverde/PipelineNet</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/ipvalverde/PipelineNet/blob/master/LICENSE</PackageLicenseUrl>
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Copyright © Israel Valverde</Copyright>
     <PackageTags>Pipeline .NetCore Portable Chain Responsibility ChainOfResponsibility Core NetStandard</PackageTags>
   </PropertyGroup>
-
-  <PropertyGroup Condition="Exists('$(PackageReleaseNotes)')">
-    <PackageReleaseNotes>$(PackageReleaseNotes)</PackageReleaseNotes>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="!Exists('$(PackageReleaseNotes)')">
-    <PackageReleaseNotes>
-      - Updating csproj file format;
-      - Adding support for blocking calls in asp.net and UI threads;
-    </PackageReleaseNotes>
-  </PropertyGroup>
-
 </Project>
