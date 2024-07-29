@@ -1,12 +1,6 @@
 param (
     [Parameter(Mandatory=$true)]
-    [string] $packageVersion,
-
-    [Parameter(Mandatory=$true)]
-    [string] $releaseNotes,
-
-    [Parameter(Mandatory=$true)]
-    [string] $isPreRelease
+    [string] $packageVersion
 )
 
 function Invoke-CommandWithLog {
@@ -17,29 +11,30 @@ function Invoke-CommandWithLog {
     Write-Host "$CommandName finished`n" -ForegroundColor Yellow
 }
 
-$projectName = "PipelineNet"
-$mainProjectDirectory = "src/PipelineNet"
-$mainProjectPath = "$mainProjectDirectory/$projectName.csproj"
-$testProjectPath = "src/PipelineNet.Tests/PipelineNet.Tests.csproj"
-$solutionPath = "src/PipelineNet.sln"
+function Publish-NugetPackage {
+    param([string] $TestProject, [string] $Project, [string] $PackageName)
 
+    Invoke-CommandWithLog -Command "dotnet test $TestProject -c Release --no-build" -CommandName "test"
+    Invoke-CommandWithLog -Command "dotnet pack $Project --no-build -c Release --include-symbols -o artifacts -p:Version=$packageVersion" -CommandName "pack"
+
+    Invoke-CommandWithLog -Command "dotnet nuget push $Project/artifacts/$PackageName.nupkg -s $env:NUGET_SOURCE -k $env:NUGET_API_KEY" -CommandName "publish"
+    Invoke-CommandWithLog -Command "dotnet nuget push $Project/artifacts/$PackageName.symbols.nupkg -s $env:NUGET_SOURCE -k $env:NUGET_API_KEY" -CommandName "publish symbols"
+}
+
+
+$solutionPath = "src/PipelineNet.sln"
 
 Write-Host "`nGit version tag: '$packageVersion'`n"
 if ($packageVersion.StartsWith("v")) {
     $packageVersion = $packageVersion.Substring(1)
 }
-if ([System.Convert]::ToBoolean($isPreRelease)) {
-    $packageVersion += "-alpha"
-}
+
+cd "src"
 
 Write-Host "Package version: $packageVersion" -ForegroundColor Yellow
 
-Invoke-CommandWithLog -Command "dotnet build $solutionPath -c Release$packageVersionCommandArgument" -CommandName "build"
-Invoke-CommandWithLog -Command "dotnet test $testProjectPath -c Release --no-build" -CommandName "test"
+Invoke-CommandWithLog -Command "dotnet build $solutionPath -c Release -p:Version=$packageVersion" -CommandName "build"
 
 
-Invoke-CommandWithLog -Command "dotnet pack $mainProjectPath --no-build -c Release --include-symbols -o artifacts -p:PackageReleaseNotes=`"$releaseNotes`" -p:Version=$packageVersion" -CommandName "pack"
-
-$nugetPackageName = "$projectName.$packageVersion"
-Invoke-CommandWithLog -Command "dotnet nuget push $mainProjectDirectory/artifacts/$nugetPackageName.nupkg -s $env:NUGET_SOURCE -k $env:NUGET_API_KEY" -CommandName "publish"
-Invoke-CommandWithLog -Command "dotnet nuget push $mainProjectDirectory/artifacts/$nugetPackageName.symbols.nupkg -s $env:NUGET_SOURCE -k $env:NUGET_API_KEY" -CommandName "publish symbols"
+Publish-NugetPackage -TestProject "PipelineNet.Tests/PipelineNet.Tests.csproj" -Project "PipelineNet/PipelineNet.csproj" -PackageName "PipelineNet.$packageVersion"
+Publish-NugetPackage -TestProject "PipelineNet.ServiceProvider.Tests/PipelineNet.ServiceProvider.Tests.csproj" -Project "PipelineNet.ServiceProvider/PipelineNet.ServiceProvider.csproj" -PackageName "PipelineNet.ServiceProvider.$packageVersion"
