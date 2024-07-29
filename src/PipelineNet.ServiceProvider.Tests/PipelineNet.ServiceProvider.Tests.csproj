@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PipelineNet.ServiceProvider\PipelineNet.ServiceProvider.csproj" />
+    <ProjectReference Include="..\PipelineNet\PipelineNet.csproj" />
   </ItemGroup>
 
   <ItemGroup>
