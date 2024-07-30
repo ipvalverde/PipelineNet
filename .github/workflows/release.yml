@@ -1,18 +1,29 @@
-# This workflow will publish the nuget packages when a relase is created
-
 name: Release Nuget Package
 
 on:
   release:
     types: [published]
 
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'The name of the tag to release'
+        required: true
+        default: ''
+
 jobs:
   publish:
     runs-on: ubuntu-latest
 
+    env:
+      TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name || github.event.release.tag_name }}
+
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.TAG_NAME }}
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -20,7 +31,7 @@ jobs:
 
     - name: Build and publish
       shell: pwsh
-      run: ./build.ps1 ${{ env.RELEASE_TAG }}
+      run: ./build.ps1 ${{ env.TAG_NAME }}
       env:
         NUGET_SOURCE: ${{ secrets.NUGET_SOURCE }}  # Replace with your NuGet source (public or private)
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}  # Replace with your NuGet API key (stored as secret)
