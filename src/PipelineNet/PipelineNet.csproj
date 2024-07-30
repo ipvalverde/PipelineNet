@@ -12,8 +12,13 @@
     <Authors>Israel Valverde</Authors>
     <Description>A micro framework that helps you implement pipeline and chain of responsibility patterns.</Description>
     <PackageProjectUrl>https://github.com/ipvalverde/PipelineNet</PackageProjectUrl>
-	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Copyright © Israel Valverde</Copyright>
     <PackageTags>Pipeline .NetCore Portable Chain Responsibility ChainOfResponsibility Core NetStandard</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 </Project>

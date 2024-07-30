@@ -22,14 +22,14 @@ function Publish-NugetPackage {
 }
 
 
-$solutionPath = "src/PipelineNet.sln"
+$solutionPath = "PipelineNet.sln"
 
 Write-Host "`nGit version tag: '$packageVersion'`n"
 if ($packageVersion.StartsWith("v")) {
     $packageVersion = $packageVersion.Substring(1)
 }
 
-cd "src"
+Set-Location -Path "src" -PassThru
 
 Write-Host "Package version: $packageVersion" -ForegroundColor Yellow
 

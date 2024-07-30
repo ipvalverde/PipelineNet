@@ -12,9 +12,10 @@
     <Authors>Mariusz Stępień</Authors>
     <Description>A micro framework that helps you implement pipeline and chain of responsibility patterns.</Description>
     <PackageProjectUrl>https://github.com/ipvalverde/PipelineNet</PackageProjectUrl>
-	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Copyright © Mariusz Stępień, Israel Valverde</Copyright>
     <PackageTags>Pipeline .NetCore Portable Chain Responsibility ChainOfResponsibility Core NetStandard DI IOC DependencyInjection</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PipelineNet\PipelineNet.csproj" PrivateAssets="compile;contentfiles;build;analyzers" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>
