@@ -29,12 +29,10 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Get latest build script
-      uses: actions/checkout@v4
-      with:
-        clean: false
-        sparse-checkout: |
-          build.ps1
+    - name: Fetch latest build script from master branch
+      run: |
+        git fetch origin master
+        git checkout origin/master -- build.ps1
 
     - name: Build and publish
       shell: pwsh
