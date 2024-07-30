@@ -14,13 +14,16 @@ function Invoke-CommandWithLog {
 function Publish-NugetPackage {
     param([string] $TestProject, [string] $Project, [string] $PackageName)
 
-    Invoke-CommandWithLog -Command "dotnet test $TestProject -c Release --no-build" -CommandName "test"
-    Invoke-CommandWithLog -Command "dotnet pack $Project --no-build -c Release --include-symbols -o artifacts -p:Version=$packageVersion" -CommandName "pack"
+    $TestProjectPath = "$TestProject/$TestProject.csproj"
+    $ProjectPath = "$Project/$Project.csproj"
 
-    Invoke-CommandWithLog -Command "dotnet nuget push $Project/artifacts/$PackageName.nupkg -s $env:NUGET_SOURCE -k $env:NUGET_API_KEY" -CommandName "publish"
-    Invoke-CommandWithLog -Command "dotnet nuget push $Project/artifacts/$PackageName.symbols.nupkg -s $env:NUGET_SOURCE -k $env:NUGET_API_KEY" -CommandName "publish symbols"
+    Invoke-CommandWithLog -Command "dotnet test $TestProjectPath -c Release --no-build" -CommandName "test"
+    Invoke-CommandWithLog -Command "dotnet pack $ProjectPath --no-build -c Release --include-symbols -o artifacts -p:Version=$packageVersion" -CommandName "pack"
+
+
+    Invoke-CommandWithLog -Command "dotnet nuget push artifacts/$PackageName.nupkg -s $Env:NUGET_SOURCE -k $Env:NUGET_API_KEY" -CommandName "publish"
+    Invoke-CommandWithLog -Command "dotnet nuget push artifacts/$PackageName.symbols.nupkg -s $Env:NUGET_SOURCE -k $Env:NUGET_API_KEY" -CommandName "publish symbols"
 }
-
 
 $solutionPath = "PipelineNet.sln"
 
@@ -36,5 +39,5 @@ Write-Host "Package version: $packageVersion" -ForegroundColor Yellow
 Invoke-CommandWithLog -Command "dotnet build $solutionPath -c Release -p:Version=$packageVersion" -CommandName "build"
 
 
-Publish-NugetPackage -TestProject "PipelineNet.Tests/PipelineNet.Tests.csproj" -Project "PipelineNet/PipelineNet.csproj" -PackageName "PipelineNet.$packageVersion"
-Publish-NugetPackage -TestProject "PipelineNet.ServiceProvider.Tests/PipelineNet.ServiceProvider.Tests.csproj" -Project "PipelineNet.ServiceProvider/PipelineNet.ServiceProvider.csproj" -PackageName "PipelineNet.ServiceProvider.$packageVersion"
+Publish-NugetPackage -TestProject "PipelineNet.Tests" -Project "PipelineNet" -PackageName "PipelineNet.$packageVersion"
+Publish-NugetPackage -TestProject "PipelineNet.ServiceProvider.Tests" -Project "PipelineNet.ServiceProvider" -PackageName "PipelineNet.ServiceProvider.$packageVersion"
