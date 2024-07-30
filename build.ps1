@@ -21,8 +21,8 @@ function Publish-NugetPackage {
     Invoke-CommandWithLog -Command "dotnet pack $ProjectPath --no-build -c Release --include-symbols -o artifacts -p:Version=$packageVersion" -CommandName "pack"
 
 
-    Invoke-CommandWithLog -Command "dotnet nuget push artifacts/$PackageName.nupkg -s $Env:NUGET_SOURCE -k $Env:NUGET_API_KEY" -CommandName "publish"
-    Invoke-CommandWithLog -Command "dotnet nuget push artifacts/$PackageName.symbols.nupkg -s $Env:NUGET_SOURCE -k $Env:NUGET_API_KEY" -CommandName "publish symbols"
+    Invoke-CommandWithLog -Command "dotnet nuget push artifacts/$PackageName.nupkg -s $($Env:NUGET_SOURCE) -k $($Env:NUGET_API_KEY)" -CommandName "publish"
+    Invoke-CommandWithLog -Command "dotnet nuget push artifacts/$PackageName.symbols.nupkg -s $($Env:NUGET_SOURCE) -k $($Env:NUGET_API_KEY)" -CommandName "publish symbols"
 }
 
 $solutionPath = "PipelineNet.sln"
