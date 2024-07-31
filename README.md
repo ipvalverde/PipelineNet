@@ -19,13 +19,16 @@ dotnet add package PipelineNet
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-  - [Simple example](#simple-example)
-  - [Pipeline vs Chain of responsibility](#pipeline-vs-chain-of-responsibility)
-  - [Middleware](#middleware)
-  - [Pipelines](#pipelines)
-  - [Chains of responsibility](#chains-of-responsibility)
-  - [Middleware resolver](#middleware-resolver)
-  - [License](#license)
+- [Simple example](#simple-example)
+- [Pipeline vs Chain of responsibility](#pipeline-vs-chain-of-responsibility)
+- [Middleware](#middleware)
+- [Pipelines](#pipelines)
+- [Chains of responsibility](#chains-of-responsibility)
+- [Factories](#factories)
+- [Middleware resolver](#middleware-resolver)
+  - [ServiceProvider implementation](#serviceprovider-implementation)
+  - [Unity implementation](#unity-implementation)
+- [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -194,6 +197,23 @@ result = await exceptionHandlersChain.Execute(new ArgumentException()); // Resul
 result = await exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be false
 ```
 
+## Factories
+Instead of instantiating pipelines and chains of responsibility directly, you can use factories to instantiate them:
+```C#
+IAsyncPipelineFactory<Bitmap> pipelineFactory = new AsyncPipelineFactory<Bitmap>(new ActivatorMiddlewareResovler());
+
+IAsyncPipeline<Bitmap> pipeline = pipelineFactory.Create()
+    .Add<RoudCornersAsyncMiddleware>()
+    .Add<AddTransparencyAsyncMiddleware>()
+    .Add<AddWatermarkAsyncMiddleware>();
+```
+
+There are four types of factories:
+- `PipelineFactory<TParamater>` for pipelines.
+- `AsyncPipelineFactory<TParamater>` for asynchronous pipelines.
+- `ResponsibilityChainFactory<TParameter, TReturn>` for chains of responsibility.
+- `AsyncResponsibilityChainFactory<TParameter, TReturn>` for asynchronous chains of responsibility.
+
 ## Middleware resolver
 You may be wondering what is all this `ActivatorMiddlewareResolver` class being passed to every instance of pipeline and chain of responsibility.
 This is a default implementation of the `IMiddlewareResolver`, which is used to create instances of the middleware types.
@@ -213,30 +233,31 @@ Install-Package PipelineNet.ServiceProvider
 ```
 
 Use it as follows:
-
 ```C#
-services.AddScoped<IMyPipelineFactory, MyPipelineFactory>();
-
-public interface IMyPipelineFactory
+public interface IMyService
 {
-    IAsyncPipeline<Bitmap> CreatePipeline();
+    Task DoSomething();
 }
 
-public class MyPipelineFactory : IMyPipelineFactory
+public class MyService : IMyService
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IAsyncPipelineFactory<Bitmap> _pipelineFactory;
 
-    public MyPipelineFactory(IServiceProvider serviceProvider)
+    public MyPipelineFactory(IAsyncPipelineFactory<Bitmap> pipelineFactory)
     {
-        _serviceProvider = serviceProvider;
+        _pipelineFactory = pipelineFactory;
     }
 
-    public IAsyncPipeline<Bitmap> CreatePipeline()
+    public Task DoSomething()
     {
-        return new AsyncPipeline<Bitmap>(new ActivatorUtilitiesMiddlewareResolver(_serviceProvider)) // Pass ActivatorUtilitiesMiddlewareResolver
+        IAsyncPipeline<Bitmap> pipeline = _pipelineFactory.Create()
             .Add<RoudCornersAsyncMiddleware>()
             .Add<AddTransparencyAsyncMiddleware>()
             .Add<AddWatermarkAsyncMiddleware>();
+
+        Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
+
+        await pipeline.Execute(image);
     }
 }
 
@@ -244,7 +265,7 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 {
     private readonly ILogger<RoudCornersAsyncMiddleware> _logger;
 
-    // The following constructor argument will be provided by IServiceProvider
+    // The following constructor arguments will be provided by IServiceProvider
     public RoudCornersAsyncMiddleware(ILogger<RoudCornersAsyncMiddleware> logger)
     {
         _logger = logger;
@@ -257,6 +278,62 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
         await next(parameter);
     }
 }
+```
+
+Register it using `IHttpContextAccessor` (recommended):
+```C#
+services.AddSingleton<IMyService, MyService>();
+
+services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly, ServiceLifetime.Scoped); // Add all middleware from assembly
+
+services.AddHttpContextAccessor();
+
+services.TryAddSingleton<IMiddlewareResolver, HttpContextAccessorMiddlewareResolver>(); // Add middleware resolver
+
+services.TryAddSingleton(typeof(IPipelineFactory<>), typeof(AsyncPipelineFactory<>)); // Add pipeline and chain of responsibility factories
+services.TryAddSingleton(typeof(IAsyncPipelineFactory<>), typeof(AsyncPipelineFactory<>));
+services.TryAddSingleton(typeof(IResponsibilityChainFactory<,>), typeof(ResponsibilityChainFactory<,>));
+services.TryAddSingleton(typeof(IAsyncResponsibilityChainFactory<,>), typeof(AsyncResponsibilityChainFactory<,>));
+
+public class HttpContextAccessorMiddlewareResolver : IMiddlewareResolver
+{
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public HttpContextAccessorMiddlewareResolver(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException("httpContextAccessor",
+            "An instance of IHttpContextAccessor must be provided.");
+    }
+
+    public MiddlewareResolverResult Resolve(Type type)
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext == null) throw new InvalidOperationException("HttpContext must not be null.");
+
+        var middleware = httpContext.RequestServices.GetRequiredService(type);
+        bool isDisposable = false;
+
+        return new MiddlewareResolverResult
+        {
+            Middleware = middleware,
+            IsDisposable = isDisposable
+        };
+    }
+}
+```
+
+or `IServiceProvider`:
+```C#
+services.AddScoped<IMyService, MyService>();
+
+services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly, ServiceLifetime.Scoped); // Add all middleware from assembly
+
+services.TryAddScoped<IMiddlewareResolver, ServiceProviderMiddlewareResolver>(); // Add scoped middleware resolver so that scoped IServiceProvider is injected
+
+services.TryAddScoped(typeof(IPipelineFactory<>), typeof(AsyncPipelineFactory<>)); // Add pipeline and chain of responsibility factories
+services.TryAddScoped(typeof(IAsyncPipelineFactory<>), typeof(AsyncPipelineFactory<>));
+services.TryAddScoped(typeof(IResponsibilityChainFactory<,>), typeof(ResponsibilityChainFactory<,>));
+services.TryAddScoped(typeof(IAsyncResponsibilityChainFactory<,>), typeof(AsyncResponsibilityChainFactory<,>));
 ```
 
 Note that `IServiceProvider` lifetime can vary based on the lifetime of the containing class. For example, if you resolve service from a scope, and it takes an `IServiceProvider`, it'll be a scoped instance.

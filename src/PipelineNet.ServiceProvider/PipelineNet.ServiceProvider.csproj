@@ -16,6 +16,7 @@
     <Copyright>Copyright © Mariusz Stępień, Israel Valverde</Copyright>
     <PackageTags>Pipeline .NetCore Portable Chain Responsibility ChainOfResponsibility Core NetStandard DI IOC DependencyInjection</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

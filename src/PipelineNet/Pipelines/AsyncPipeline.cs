@@ -12,6 +12,10 @@ namespace PipelineNet.Pipelines
     /// <typeparam name="TParameter">The type that will be the input for all the middleware.</typeparam>
     public class AsyncPipeline<TParameter> : BaseMiddlewareFlow<IAsyncMiddleware<TParameter>>, IAsyncPipeline<TParameter>
     {
+        /// <summary>
+        /// Creates a new instance of asynchronous Pipeline.
+        /// </summary>
+        /// <param name="middlewareResolver">Resolver responsible for resolving instances out of middleware types.</param>
         public AsyncPipeline(IMiddlewareResolver middlewareResolver) : base(middlewareResolver)
         { }
 
