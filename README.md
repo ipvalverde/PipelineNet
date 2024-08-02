@@ -24,7 +24,6 @@ dotnet add package PipelineNet
 - [Middleware](#middleware)
 - [Pipelines](#pipelines)
 - [Chains of responsibility](#chains-of-responsibility)
-- [Factories:](#factories)
 - [Middleware resolver](#middleware-resolver)
   - [ServiceProvider implementation](#serviceprovider-implementation)
   - [Unity implementation](#unity-implementation)
@@ -197,18 +196,6 @@ result = await exceptionHandlersChain.Execute(new ArgumentException()); // Resul
 result = await exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be false
 ```
 
-## Factories:
-Instead of instantiating `IPipeline<TParamater>` and `IAsyncPipeline<TParamater>` directly, you can use `PipelineFactory<TParamater>` and `AsyncPipelineFactory<TParamater>`:
-```C#
-var pipelineFactory = new AsyncPipelineFactory<Bitmap>(new ActivatorMiddlewareResolver());
-
-var pipeline = pipelineFactory.Create()
-    .Add<RoudCornersAsyncMiddleware>()
-    .Add<AddTransparencyAsyncMiddleware>()
-    .Add<AddWatermarkAsyncMiddleware>();
-```
-To instantiate `IResponsibilityChain<TParameter, TReturn>` and `IAsyncResponsibilityChain<TParameter, TReturn>` you can use `ResponsibilityChainFactory<TParameter, TReturn>` and `AsyncResponsibilityChainFactory<TParameter, TReturn>`.
-
 ## Middleware resolver
 You may be wondering what is all this `ActivatorMiddlewareResolver` class being passed to every instance of pipeline and chain of responsibility.
 This is a default implementation of the `IMiddlewareResolver`, which is used to create instances of the middleware types.
@@ -227,11 +214,27 @@ You can grab it from nuget with:
 Install-Package PipelineNet.ServiceProvider
 ```
 
-Use it as follows:
-
+Instead of instantiating pipelines directly, `PipelineNet.ServiceProvider` uses factories to instantiate them:
 ```C#
-services.AddPipelineNet(typeof(RoudCornersAsyncMiddleware).Assembly); // Add core PipelineNet services and all middleware from the assembly.
-services.AddScoped<IMyService, MyService>();
+IAsyncPipelineFactory<Bitmap> pipelineFactory = new AsyncPipelineFactory<Bitmap>();
+IServiceProvider serviceProvider = GetServiceProviderSomehow();
+
+IAsyncPipeline<Bitmap> pipeline = pipelineFactory.Create(serviceProvider)
+    .Add<RoudCornersAsyncMiddleware>()
+    .Add<AddTransparencyAsyncMiddleware>()
+    .Add<AddWatermarkAsyncMiddleware>();
+```
+
+It includes four types of factories:
+- `PipelineFactory<TParamater>` for pipelines.
+- `AsyncPipelineFactory<TParamater>` for asynchronous pipelines.
+- `ResponsibilityChainFactory<TParameter, TReturn>` for chains of responsibility.
+- `AsyncResponsibilityChainFactory<TParameter, TReturn>` for asynchronous chains of responsibility.
+
+It also includes extension methods for registering factories and automatic middleware registration through assembly scanning:
+```C#
+services.AddPipelineNet(typeof(RoudCornersAsyncMiddleware).Assembly); // Add pipeline and chain of responsibility factories and all middleware from the assembly
+services.AddScoped<IMyService, MyService>(); // Add service as scoped so that scoped IServiceProvider gets injected
 
 public interface IMyService
 {
@@ -241,17 +244,21 @@ public interface IMyService
 public class MyService : IMyService
 {
     private readonly IAsyncPipelineFactory<Bitmap> _pipelineFactory;
+    private readonly IServiceProvider _serviceProvider;
 
-    public MyService(IAsyncPipelineFactory<Bitmap> pipelineFactory)
+    public MyService(
+        IAsyncPipelineFactory<Bitmap> pipelineFactory,
+        IServiceProvider serviceProvider)
     {
         _pipelineFactory = pipelineFactory;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task DoSomething()
     {
         Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
 
-        IAsyncPipeline<Bitmap> pipeline = _pipelineFactory.Create()
+        IAsyncPipeline<Bitmap> pipeline = _pipelineFactory.Create(_serviceProvider)
             .Add<RoudCornersAsyncMiddleware>()
             .Add<AddTransparencyAsyncMiddleware>()
             .Add<AddWatermarkAsyncMiddleware>();
@@ -264,7 +271,7 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 {
     private readonly ILogger<RoudCornersAsyncMiddleware> _logger;
 
-    // The following constructor argument will be provided by IServiceProvider
+    // The following constructor arguments will be provided by the IServiceProvider
     public RoudCornersAsyncMiddleware(ILogger<RoudCornersAsyncMiddleware> logger)
     {
         _logger = logger;
@@ -275,34 +282,6 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
         _logger.LogInformation("Running RoudCornersAsyncMiddleware.");
         // Handle somehow
         await next(parameter);
-    }
-}
-```
-
-Alternatively, can instantiate pipeline and chain of resposiblity factories directly:
-
-```C#
-public class MyService : IMyService
-{
-    private readonly IServiceProvider _serviceProvider;
-
-    public MyService(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
-    public async Task DoSomething()
-    {
-        Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
-
-        IAsyncPipelineFactory<Bitmap> pipelineFactory = new AsyncPipelineFactory<Bitmap>(new SeriveProviderMiddlewareResolver(_serviceProvider));
-
-        IAsyncPipeline<Bitmap> pipeline = pipelineFactory.Create()
-            .Add<RoudCornersAsyncMiddleware>()
-            .Add<AddTransparencyAsyncMiddleware>()
-            .Add<AddWatermarkAsyncMiddleware>();
-
-        await pipeline.Execute(image);
     }
 }
 ```

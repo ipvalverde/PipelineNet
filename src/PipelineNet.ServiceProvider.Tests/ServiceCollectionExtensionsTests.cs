@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PipelineNet.Middleware;
-using PipelineNet.PipelineFactories;
 using PipelineNet.Pipelines;
+using PipelineNet.ServiceProvider.Pipelines.Factories;
 using Xunit.Abstractions;
 
 namespace PipelineNet.ServiceProvider.Tests
@@ -22,17 +22,21 @@ namespace PipelineNet.ServiceProvider.Tests
         public class MyService : IMyService
         {
             private readonly IAsyncPipelineFactory<Bitmap> _pipelineFactory;
+            private readonly IServiceProvider _serviceProvider;
 
-            public MyService(IAsyncPipelineFactory<Bitmap> pipelineFactory)
+            public MyService(
+                IAsyncPipelineFactory<Bitmap> pipelineFactory,
+                IServiceProvider serviceProvider)
             {
                 _pipelineFactory = pipelineFactory;
+                _serviceProvider = serviceProvider;
             }
 
             public async Task DoSomething()
             {
-                var image = new Bitmap();
+                Bitmap image = new Bitmap();
 
-                IAsyncPipeline<Bitmap> pipeline = _pipelineFactory.Create()
+                IAsyncPipeline<Bitmap> pipeline = _pipelineFactory.Create(_serviceProvider)
                     .Add<RoudCornersAsyncMiddleware>()
                     .Add<AddTransparencyAsyncMiddleware>()
                     .Add<AddWatermarkAsyncMiddleware>();
@@ -73,7 +77,6 @@ namespace PipelineNet.ServiceProvider.Tests
         {
             private readonly ILogger<RoudCornersAsyncMiddleware> _logger;
 
-            // The following constructor argument will be provided by IServiceProvider
             public RoudCornersAsyncMiddleware(ILogger<RoudCornersAsyncMiddleware> logger)
             {
                 _logger = logger;
@@ -82,7 +85,6 @@ namespace PipelineNet.ServiceProvider.Tests
             public async Task Run(Bitmap parameter, Func<Bitmap, Task> next)
             {
                 _logger.LogInformation("Running RoudCornersAsyncMiddleware.");
-                // Handle somehow
                 await next(parameter);
             }
         }

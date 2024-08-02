@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
 using PipelineNet.Middleware;
-using PipelineNet.MiddlewareResolver;
-using PipelineNet.PipelineFactories;
-using PipelineNet.ServiceProvider.MiddlewareResolver;
+using PipelineNet.ServiceProvider.ChainsOfResponsibility.Factories;
+using PipelineNet.ServiceProvider.Pipelines.Factories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,37 +16,37 @@ namespace PipelineNet.ServiceProvider
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds core PipelineNet services and all middleware from the assemblies.
+        /// Adds pipeline and chain of responsibility factories. Adds all middleware from assemblies.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="assemblies">The assemblies scan.</param>
-        /// <param name="lifetime">The lifetime of the registered services and middleware.</param>
+        /// <param name="assemblies">Assemblies to scan.</param>
+        /// <param name="lifetime">The lifetime of the registered middleware.</param>
         /// <returns>The service collection.</returns>
         public static IServiceCollection AddPipelineNet(
             this IServiceCollection services,
             IEnumerable<Assembly> assemblies,
-            ServiceLifetime lifetime = ServiceLifetime.Scoped)
+            ServiceLifetime lifetime = ServiceLifetime.Transient)
         {
             if (services == null) throw new ArgumentNullException("services");
             if (assemblies == null) throw new ArgumentNullException("assemblies");
 
-            services.AddPipelineNetCore(lifetime);
-            services.AddMidlewaresFromAssemblies(assemblies, lifetime);
+            services.AddMiddlewareFlowFactories();
+            services.AddMiddlewareFromAssemblies(assemblies, lifetime);
 
             return services;
         }
 
         /// <summary>
-        /// Adds core PipelineNet services and all middleware from the assambly.
+        /// Adds pipeline and chain of responsibility factories. Adds all middleware from the assambly.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="assembly">The assembly scan.</param>
-        /// <param name="lifetime">The lifetime of the registered services and middleware.</param>
+        /// <param name="assembly">The assembly to scan.</param>
+        /// <param name="lifetime">The lifetime of the registered middleware.</param>
         /// <returns>The service collection.</returns>
         public static IServiceCollection AddPipelineNet(
             this IServiceCollection services,
             Assembly assembly,
-            ServiceLifetime lifetime = ServiceLifetime.Scoped)
+            ServiceLifetime lifetime = ServiceLifetime.Transient)
         {
             if (services == null) throw new ArgumentNullException("services");
             if (assembly == null) throw new ArgumentNullException("assembly");
@@ -55,44 +55,41 @@ namespace PipelineNet.ServiceProvider
         }
 
         /// <summary>
-        /// Adds core PipelineNet services.
+        /// Adds pipeline and chain of responsibility factories.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="lifetime">The lifetime of the registered services.</param>
         /// <returns>The service collection.</returns>
-        public static IServiceCollection AddPipelineNetCore(
-            this IServiceCollection services,
-            ServiceLifetime lifetime = ServiceLifetime.Scoped)
+        public static IServiceCollection AddMiddlewareFlowFactories(
+            this IServiceCollection services)
         {
             if (services == null) throw new ArgumentNullException("services");
 
-            services.Add(new ServiceDescriptor(typeof(IMiddlewareResolver), typeof(ServiceProviderMiddlewareResolver), lifetime));
-            services.Add(new ServiceDescriptor(typeof(IPipelineFactory<>), typeof(PipelineFactory<>), lifetime));
-            services.Add(new ServiceDescriptor(typeof(IAsyncPipelineFactory<>), typeof(AsyncPipelineFactory<>), lifetime));
-            services.Add(new ServiceDescriptor(typeof(IResponsibilityChainFactory<,>), typeof(ResponsibilityChainFactory<,>), lifetime));
-            services.Add(new ServiceDescriptor(typeof(IAsyncResponsibilityChainFactory<,>), typeof(AsyncResponsibilityChainFactory<,>), lifetime));
+            services.TryAddSingleton(typeof(IPipelineFactory<>), typeof(PipelineFactory<>));
+            services.TryAddSingleton(typeof(IAsyncPipelineFactory<>), typeof(AsyncPipelineFactory<>));
+            services.TryAddSingleton(typeof(IResponsibilityChainFactory<,>), typeof(ResponsibilityChainFactory<,>));
+            services.TryAddSingleton(typeof(IAsyncResponsibilityChainFactory<,>), typeof(AsyncResponsibilityChainFactory<,>));
 
             return services;
         }
 
         /// <summary>
-        /// Adds all middleware from the assemblies.
+        /// Adds all middleware from assemblies.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="assemblies">The assemblies scan.</param>
+        /// <param name="assemblies">Assemblies to scan.</param>
         /// <param name="lifetime">The lifetime of the registered middleware.</param>
         /// <returns>The service collection.</returns>
-        public static IServiceCollection AddMidlewaresFromAssemblies(
+        public static IServiceCollection AddMiddlewareFromAssemblies(
             this IServiceCollection services,
             IEnumerable<Assembly> assemblies,
-            ServiceLifetime lifetime = ServiceLifetime.Scoped)
+            ServiceLifetime lifetime = ServiceLifetime.Transient)
         {
             if (services == null) throw new ArgumentNullException("services");
             if (assemblies == null) throw new ArgumentNullException("assemblies");
 
             foreach (var assembly in assemblies)
             {
-                services.AddMidlewaresFromAssembly(assembly, lifetime);
+                services.AddMiddlewareFromAssembly(assembly, lifetime);
             }
 
             return services;
@@ -102,13 +99,13 @@ namespace PipelineNet.ServiceProvider
         /// Adds all middleware from the assembly.
         /// </summary>
         /// <param name="services">The service collection.</param>
-        /// <param name="assembly">The assembly scan.</param>
+        /// <param name="assembly">The assembly to scan.</param>
         /// <param name="lifetime">The lifetime of the registered middleware.</param>
         /// <returns>The service collection.</returns>
-        public static IServiceCollection AddMidlewaresFromAssembly(
+        public static IServiceCollection AddMiddlewareFromAssembly(
             this IServiceCollection services,
             Assembly assembly,
-            ServiceLifetime lifetime = ServiceLifetime.Scoped)
+            ServiceLifetime lifetime = ServiceLifetime.Transient)
         {
             if (services == null) throw new ArgumentNullException("services");
             if (assembly == null) throw new ArgumentNullException("assembly");
@@ -129,7 +126,7 @@ namespace PipelineNet.ServiceProvider
                     && !type.IsGenericTypeDefinition
                     && type.GetInterfaces().Any(i => i.IsGenericType && openGenericTypes.Contains(i.GetGenericTypeDefinition())))
                 {
-                    services.Add(new ServiceDescriptor(type, type, lifetime));
+                    services.TryAdd(new ServiceDescriptor(type, type, lifetime));
                 }
             }
 
