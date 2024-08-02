@@ -234,7 +234,7 @@ It includes four types of factories:
 It also includes extension methods for registering factories and automatic middleware registration through assembly scanning:
 ```C#
 services.AddPipelineNet(typeof(RoudCornersAsyncMiddleware).Assembly); // Add pipeline and chain of responsibility factories and all middleware from the assembly
-services.AddScoped<IMyService, MyService>(); // Add service as scoped so that scoped IServiceProvider gets injected
+services.AddScoped<IMyService, MyService>(); // Add service as scoped so that scoped IServiceProvider is injected
 
 public interface IMyService
 {

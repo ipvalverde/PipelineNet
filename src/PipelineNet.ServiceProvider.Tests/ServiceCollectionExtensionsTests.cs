@@ -45,7 +45,7 @@ namespace PipelineNet.ServiceProvider.Tests
             }
         }
 
-        public class TestOutputHelperLogger<TCategoryName> : ILogger<TCategoryName>
+        public class TestOutputHelperLogger : ILogger
         {
             private readonly ITestOutputHelper _output;
 
@@ -55,19 +55,36 @@ namespace PipelineNet.ServiceProvider.Tests
             }
 
             public IDisposable? BeginScope<TState>(TState state)
-                where TState : notnull
-            {
-                return null;
-            }
+                where TState : notnull =>
+                new NullScope();
 
-            public bool IsEnabled(LogLevel logLevel)
-            {
-                return true;
-            }
+            public bool IsEnabled(LogLevel logLevel) => true;
 
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-            {
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
                 _output.WriteLine($"{logLevel}:{eventId}:{formatter(state, exception)}");
+
+            private class NullScope : IDisposable
+            {
+                public void Dispose()
+                {
+                }
+            }
+        }
+
+        public class TestOutputHelperLoggerProvider : ILoggerProvider
+        {
+            private readonly ITestOutputHelper _output;
+
+            public TestOutputHelperLoggerProvider(ITestOutputHelper output)
+            {
+                _output = output;
+            }
+
+            public ILogger CreateLogger(string categoryName) =>
+                new TestOutputHelperLogger(_output);
+
+            public void Dispose()
+            {
             }
         }
         #endregion
@@ -77,6 +94,7 @@ namespace PipelineNet.ServiceProvider.Tests
         {
             private readonly ILogger<RoudCornersAsyncMiddleware> _logger;
 
+            // The following constructor arguments will be provided by the IServiceProvider
             public RoudCornersAsyncMiddleware(ILogger<RoudCornersAsyncMiddleware> logger)
             {
                 _logger = logger;
@@ -85,6 +103,7 @@ namespace PipelineNet.ServiceProvider.Tests
             public async Task Run(Bitmap parameter, Func<Bitmap, Task> next)
             {
                 _logger.LogInformation("Running RoudCornersAsyncMiddleware.");
+                // Handle somehow
                 await next(parameter);
             }
         }
@@ -122,7 +141,6 @@ namespace PipelineNet.ServiceProvider.Tests
         }
         #endregion
 
-
         private readonly ITestOutputHelper _output;
 
         public ServiceCollectionExtensionsTests(ITestOutputHelper output)
@@ -136,8 +154,7 @@ namespace PipelineNet.ServiceProvider.Tests
             var serviceProvider = new ServiceCollection()
                 .AddPipelineNet(typeof(RoudCornersAsyncMiddleware).Assembly)
                 .AddScoped<IMyService, MyService>()
-                .AddSingleton(_output)
-                .AddSingleton(typeof(ILogger<>), typeof(TestOutputHelperLogger<>))
+                .AddLogging(builder => builder.Services.AddSingleton<ILoggerProvider>(new TestOutputHelperLoggerProvider(_output)))
                 .BuildServiceProvider(validateScopes: true);
             var scope = serviceProvider.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<IMyService>();
