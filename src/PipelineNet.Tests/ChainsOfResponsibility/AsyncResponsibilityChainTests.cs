@@ -88,6 +88,15 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
                 return await executeNext(exception);
             }
         }
+
+        public class ThrowIfCancellationRequestedMiddleware : ICancellableAsyncMiddleware<Exception, bool>
+        {
+            public async Task<bool> Run(Exception exception, Func<Exception, Task<bool>> executeNext, CancellationToken cancellationToken)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return await executeNext(exception);
+            }
+        }
         #endregion
 
         [Fact]
@@ -166,8 +175,6 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             });
         }
 
-
-
         /// <summary>
         /// Try to generate a deadlock in synchronous middleware.
         /// </summary>
@@ -183,6 +190,52 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             var result = resultTask.Result;
 
             Assert.Equal("Test with spaces  and new lines", result);
+        }
+
+        [Fact]
+        public async Task Execute_ChainOfMiddlewareWithCancellableMiddleware_CancellableMiddlewareIsExecuted()
+        {
+            var responsibilityChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+                .Chain<UnavailableResourcesExceptionHandler>()
+                .Chain(typeof(InvalidateDataExceptionHandler))
+                .Chain<MyExceptionHandler>()
+                .ChainCancellable<ThrowIfCancellationRequestedMiddleware>();
+
+            // Creates an ArgumentNullException. The 'ThrowIfCancellationRequestedMiddleware'
+            // middleware should be the last one to execute.
+            var exception = new ArgumentNullException();
+
+            // Create the cancellation token in the canceled state.
+            var cancellationToken = new CancellationToken(canceled: true);
+
+            // The 'ThrowIfCancellationRequestedMiddleware' should throw 'OperationCanceledException'.
+            await Assert.ThrowsAsync<OperationCanceledException>(() => responsibilityChain.Execute(exception, cancellationToken));
+        }
+
+        [Fact]
+        public async Task Execute_ChainOfMiddlewareWithCancellableFinally_CancellableFinallyIsExecuted()
+        {
+            var responsibilityChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+                .Chain<UnavailableResourcesExceptionHandler>()
+                .Chain(typeof(InvalidateDataExceptionHandler))
+                .Chain<MyExceptionHandler>()
+                .CancellableFinally(async (ex, ct) =>
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    await Task.CompletedTask;
+                    return true;
+                });
+
+            // Creates an ArgumentNullException. The 'finally'
+            // function should be the last one to execute.
+            var exception = new ArgumentNullException();
+
+            // Create the cancellation token in the canceled state.
+            var cancellationToken = new CancellationToken(canceled: true);
+
+            // The 'finally' function should throw 'OperationCanceledException'.
+            await Assert.ThrowsAsync<OperationCanceledException>(() => responsibilityChain.Execute(exception, cancellationToken));
         }
     }
 }
