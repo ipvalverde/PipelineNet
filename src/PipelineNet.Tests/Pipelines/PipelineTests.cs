@@ -1,7 +1,6 @@
 ﻿using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
 using PipelineNet.Pipelines;
-using System;
 using System.Text.RegularExpressions;
 using Xunit;
 

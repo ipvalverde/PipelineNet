@@ -1,7 +1,6 @@
 ﻿using PipelineNet.ChainsOfResponsibility;
 using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
-using System;
 using Xunit;
 
 namespace PipelineNet.Tests.ChainsOfResponsibility
