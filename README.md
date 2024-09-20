@@ -19,13 +19,16 @@ dotnet add package PipelineNet
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-  - [Simple example](#simple-example)
-  - [Pipeline vs Chain of responsibility](#pipeline-vs-chain-of-responsibility)
-  - [Middleware](#middleware)
-  - [Pipelines](#pipelines)
-  - [Chains of responsibility](#chains-of-responsibility)
-  - [Middleware resolver](#middleware-resolver)
-  - [License](#license)
+- [Simple example](#simple-example)
+- [Pipeline vs Chain of responsibility](#pipeline-vs-chain-of-responsibility)
+- [Middleware](#middleware)
+- [Pipelines](#pipelines)
+- [Chains of responsibility](#chains-of-responsibility)
+- [Middleware resolver](#middleware-resolver)
+  - [ServiceProvider implementation](#serviceprovider-implementation)
+  - [Unity implementation](#unity-implementation)
+- [Migrate from PipelineNet 0.10 to 0.20](#migrate-from-pipelinenet-010-to-020)
+- [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -84,17 +87,39 @@ You can even define a fallback function that will be executed after your entire 
 var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentExceptionHandler>()
-    .Finally((parameter) =>
+    .Finally<FinallyDoSomething>();
+
+public class FinallyDoSomething : IFinally<Exception, bool>
+{
+    public bool Finally(Exception parameter)
     {
         // Do something
         return true;
-    });
+    }
+}
 ```
 Now if the same line gets executed:
 ```C#
 var result = exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be true
 ```
 The result will be true because of the function defined in the `Finally` method.
+
+You can also opt in to throw an exception in the `Finally` method instead of returning a value:
+```C#
+var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+    .Chain<OutOfMemoryExceptionHandler>()
+    .Chain<ArgumentExceptionHandler>()
+    .Finally<FinallyThrow>();
+
+public class FinallyThrow : IFinally<Exception, bool>
+{
+    public bool Finally(Exception parameter)
+    {
+        throw new InvalidOperationException("End of the chain of responsibility reached. No middleware matches returned a value.");
+    }
+}
+```
+Now if the end of the chain was reached and no middleware matches returned a value, the `InvalidOperationException` will be thrown.
 
 ## Pipeline vs Chain of responsibility
 Here is the difference between those two in PipelineNet:
@@ -176,11 +201,16 @@ If you want to, you can use the asynchronous version, using asynchronous middlew
 var exceptionHandlersChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryAsyncExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentAsyncExceptionHandler>()
-    .Finally((ex) =>
+    .Finally<FinallySetExceptionSource>();
+
+public class FinallySetExceptionSource : IAsyncFinally<Exception, bool>
+{
+    public Task<bool> Finally(Exception parameter)
     {
         ex.Source = ExceptionSource;
         return Task.FromResult(true);
-    });
+    }
+}
 ```
 And here is the execution:
 ```C#
@@ -269,6 +299,37 @@ An implementation of the [middleware resolver for Unity](https://github.com/Shan
 
 ```
 Install-Package PipelineNet.Unity
+```
+
+## Migrate from PipelineNet 0.10 to 0.20
+In PipelineNet 0.20, `Finally` overloads that use `Func` have been made obsolete.
+
+To migrate replace:
+```C#
+var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+    .Chain<OutOfMemoryExceptionHandler>()
+    .Chain<ArgumentExceptionHandler>()
+    .Finally((parameter) =>
+    {
+        // Do something
+        return true;
+    });
+```
+With:
+```C#
+var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+    .Chain<OutOfMemoryExceptionHandler>()
+    .Chain<ArgumentExceptionHandler>()
+    .Finally<FinallyDoSomething>();
+
+public class FinallyDoSomething : IFinally<Exception, bool>
+{
+    public bool Finally(Exception parameter)
+    {
+        // Do something
+        return true;
+    }
+}
 ```
 
 ## License
