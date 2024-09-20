@@ -6,7 +6,7 @@ namespace PipelineNet.ServiceProvider.MiddlewareResolver
 {
     /// <summary>
     /// An implementation of <see cref="IMiddlewareResolver"/> that creates
-    /// instances using the <see cref="ActivatorUtilities"/>.
+    /// instances using the <see cref="Microsoft.Extensions.DependencyInjection.ActivatorUtilities"/>.
     /// </summary>
     public class ActivatorUtilitiesMiddlewareResolver : IMiddlewareResolver
     {

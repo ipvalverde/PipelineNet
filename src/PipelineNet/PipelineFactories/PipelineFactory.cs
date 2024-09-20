@@ -2,7 +2,7 @@
 using PipelineNet.Pipelines;
 using System;
 
-namespace PipelineNet.ServiceProvider.Pipelines.Factories
+namespace PipelineNet.PipelineFactories
 {
     /// <inheritdoc/>
     public class PipelineFactory<TParameter>

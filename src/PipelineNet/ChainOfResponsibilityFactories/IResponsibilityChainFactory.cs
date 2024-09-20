@@ -1,6 +1,6 @@
 ﻿using PipelineNet.ChainsOfResponsibility;
 
-namespace PipelineNet.ServiceProvider.ChainsOfResponsibility.Factories
+namespace PipelineNet.ChainOfResponsibilityFactories
 {
     /// <summary>
     /// Used to create new instances of chain of responsibility.

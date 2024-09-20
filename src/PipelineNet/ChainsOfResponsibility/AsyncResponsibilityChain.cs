@@ -120,7 +120,7 @@ namespace PipelineNet.ChainsOfResponsibility
 
         /// <summary>
         /// Sets the function to be executed at the end of the chain as a fallback.
-        /// A chain can only have one finally function. Calling this method
+        /// A chain can only have one finally function. Calling this method more
         /// a second time will just replace the existing finally <see cref="Func{TParameter, TResult}"/>.
         /// </summary>
         /// <param name="finallyFunc">The function that will be execute at the end of chain.</param>

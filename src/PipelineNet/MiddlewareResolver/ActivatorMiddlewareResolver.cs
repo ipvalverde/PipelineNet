@@ -4,7 +4,7 @@ namespace PipelineNet.MiddlewareResolver
 {
     /// <summary>
     /// A default implementation of <see cref="IMiddlewareResolver"/> that creates
-    /// instances using the <see cref="Activator"/>.
+    /// instances using the <see cref="System.Activator"/>.
     /// </summary>
     public class ActivatorMiddlewareResolver : IMiddlewareResolver
     {

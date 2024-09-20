@@ -1,6 +1,6 @@
 ﻿using PipelineNet.Pipelines;
 
-namespace PipelineNet.ServiceProvider.Pipelines.Factories
+namespace PipelineNet.PipelineFactories
 {
     /// <summary>
     /// Used to create new instances of pipeline.
