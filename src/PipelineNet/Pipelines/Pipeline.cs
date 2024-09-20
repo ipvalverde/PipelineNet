@@ -62,25 +62,30 @@ namespace PipelineNet.Pipelines
                 {
                     var type = MiddlewareTypes[index];
                     resolverResult = MiddlewareResolver.Resolve(type);
-                    var middleware = (IMiddleware<TParameter>)resolverResult.Middleware;
 
                     index++;
                     if (index == MiddlewareTypes.Count)
                         action = (p) => { };
 
-                    if (resolverResult.IsDisposable && !(middleware is IDisposable))
+                    if (resolverResult == null || resolverResult.Middleware == null)
+                    {
+                        throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
+                    }
+
+                    if (resolverResult.IsDisposable && !(resolverResult.Middleware is IDisposable))
                     {
 #if NETSTANDARD2_1_OR_GREATER
-                        if (middleware is IAsyncDisposable)
+                        if (resolverResult.Middleware is IAsyncDisposable)
                         {
-                            throw new InvalidOperationException($"'{middleware.GetType().FullName}' type only implements IAsyncDisposable." +
+                            throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type only implements IAsyncDisposable." +
                                 " Use AsyncPipeline to execute the configured pipeline.");
                         }
 #endif
 
-                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type does not implement IDisposable.");
+                        throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type does not implement IDisposable.");
                     }
 
+                    var middleware = (IMiddleware<TParameter>)resolverResult.Middleware;
                     middleware.Run(param, action);
                 }
                 finally

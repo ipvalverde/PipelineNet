@@ -81,7 +81,6 @@ namespace PipelineNet.ChainsOfResponsibility
                 {
                     var type = MiddlewareTypes[index];
                     resolverResult = MiddlewareResolver.Resolve(type);
-                    var middleware = (IMiddleware<TParameter, TReturn>)resolverResult.Middleware;
 
                     index++;
                     // If the current instance of middleware is the last one in the list,
@@ -90,19 +89,25 @@ namespace PipelineNet.ChainsOfResponsibility
                     if (index == MiddlewareTypes.Count)
                         func = this._finallyFunc ?? ((p) => default(TReturn));
 
-                    if (resolverResult.IsDisposable && !(middleware is IDisposable))
+                    if (resolverResult == null || resolverResult.Middleware == null)
+                    {
+                        throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
+                    }
+
+                    if (resolverResult.IsDisposable && !(resolverResult.Middleware is IDisposable))
                     {
 #if NETSTANDARD2_1_OR_GREATER
-                        if (middleware is IAsyncDisposable)
+                        if (resolverResult.Middleware is IAsyncDisposable)
                         {
-                            throw new InvalidOperationException($"'{middleware.GetType().FullName}' type only implements IAsyncDisposable." +
+                            throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type only implements IAsyncDisposable." +
                                 " Use AsyncResponsibilityChain to execute the configured pipeline.");
                         }
 #endif
 
-                        throw new InvalidOperationException($"'{middleware.GetType().FullName}' type does not implement IDisposable.");
+                        throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type does not implement IDisposable.");
                     }
 
+                    var middleware = (IMiddleware<TParameter, TReturn>)resolverResult.Middleware;
                     return middleware.Run(param, func);
                 }
                 finally
