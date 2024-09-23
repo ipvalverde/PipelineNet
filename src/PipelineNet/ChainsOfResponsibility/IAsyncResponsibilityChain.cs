@@ -15,8 +15,8 @@ namespace PipelineNet.ChainsOfResponsibility
     {
         /// <summary>
         /// Sets the finally to be executed at the end of the chain as a fallback.
-        /// A chain can only have one finally function. Calling this method more
-        /// a second time will just replace the existing finally.
+        /// A chain can only have one finally type. Calling this method more
+        /// a second time will just replace the existing finally type.
         /// </summary>
         /// <typeparam name="TFinally">The finally being set.</typeparam>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
@@ -25,8 +25,8 @@ namespace PipelineNet.ChainsOfResponsibility
 
         /// <summary>
         /// Sets the cancellable finally to be executed at the end of the chain as a fallback.
-        /// A chain can only have one finally function. Calling this method more
-        /// a second time will just replace the existing finally.
+        /// A chain can only have one finally type. Calling this method more
+        /// a second time will just replace the existing finally type.
         /// </summary>
         /// <typeparam name="TCancellableFinally">The cancellable finally being set.</typeparam>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
@@ -35,8 +35,8 @@ namespace PipelineNet.ChainsOfResponsibility
 
         /// <summary>
         /// Sets the finally to be executed at the end of the chain as a fallback.
-        /// A chain can only have one finally function. Calling this method more
-        /// a second time will just replace the existing finally.
+        /// A chain can only have one finally type. Calling this method more
+        /// a second time will just replace the existing finally type.
         /// </summary>
         /// <param name="finallyType">The <see cref="IAsyncFinally{TParameter, TReturn}"/> or <see cref="ICancellableAsyncFinally{TParameter, TReturn}"/> that will be execute at the end of chain.</param>
         /// <returns>The current instance of <see cref="IAsyncResponsibilityChain{TParameter, TReturn}"/>.</returns>

@@ -82,7 +82,7 @@ result = exceptionHandlersChain.Execute(new ArgumentExceptionHandler()); // Resu
 // If no middleware matches returns a value, the default of the return type is returned, which in the case of 'bool' is false.
 result = exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be false
 ```
-You can even define a fallback function that will be executed after your entire chain:
+You can even define a fallback that will be executed after your entire chain:
 ```C#
 var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
@@ -102,16 +102,16 @@ Now if the same line gets executed:
 ```C#
 var result = exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be true
 ```
-The result will be true because of the function defined in the `Finally` method.
+The result will be true because of the type used in the `Finally` method.
 
-You can also opt in to throw an exception in the `Finally` method instead of returning a value:
+You can also choose to throw an exception in the `Finally` method instead of returning a value:
 ```C#
 var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>()
     .Chain<ArgumentExceptionHandler>()
-    .Finally<FinallyThrow>();
+    .Finally<ThrowInvalidOperationException>();
 
-public class FinallyThrow : IFinally<Exception, bool>
+public class ThrowInvalidOperationException : IFinally<Exception, bool>
 {
     public bool Finally(Exception parameter)
     {
@@ -125,7 +125,7 @@ Now if the end of the chain was reached and no middleware matches returned a val
 Here is the difference between those two in PipelineNet:
 - Chain of responsibility:
     - Returns a value;
-    - Have a fallback function to execute at the end of the chain;
+    - Have a fallback to execute at the end of the chain;
     - Used when you want that only one middleware to get executed based on an input, like the exception handling example;
 - Pipeline:
     - Does not return a value;
@@ -191,9 +191,9 @@ Task.WaitAll(new Task[]{ task1, task2, task3 });
 The chain of responsibility also has two implementations: `ResponsibilityChain<TParameter, TReturn>` and `AsyncResponsibilityChain<TParameter, TReturn>`.
 Both have the same functionaly, aggregate and execute a series of middleware retrieving a return type.
 
-One difference of chain responsibility when compared to pipeline is the fallback function that can be defined with
-the `Finally` method. You can set one function for chain of responsibility, calling the method more than once
-will replace the previous function defined.
+One difference of chain responsibility when compared to pipeline is the fallback that can be defined with
+the `Finally` method. You can set one finally for chain of responsibility, calling the method more than once
+will replace the previous type used.
 
 As we already have an example of a chain of responsibility, here is an example using the asynchronous implementation:
 If you want to, you can use the asynchronous version, using asynchronous middleware. Changing the instantiation to:
@@ -201,13 +201,13 @@ If you want to, you can use the asynchronous version, using asynchronous middlew
 var exceptionHandlersChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryAsyncExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentAsyncExceptionHandler>()
-    .Finally<FinallySetExceptionSource>();
+    .Finally<ExceptionHandlerFallback>();
 
-public class FinallySetExceptionSource : IAsyncFinally<Exception, bool>
+public class ExceptionHandlerFallback : IAsyncFinally<Exception, bool>
 {
     public Task<bool> Finally(Exception parameter)
     {
-        ex.Source = ExceptionSource;
+        parameter.Data.Add("MoreExtraInfo", "More information about the exception.");
         return Task.FromResult(true);
     }
 }
@@ -302,7 +302,7 @@ Install-Package PipelineNet.Unity
 ```
 
 ## Migrate from PipelineNet 0.10 to 0.20
-In PipelineNet 0.20, `Finally` overloads that use `Func` have been made obsolete.
+In PipelineNet 0.20, `Finally` overloads that use `Func` have been made obsolete. This will be removed in the next major version.
 
 To migrate replace:
 ```C#
