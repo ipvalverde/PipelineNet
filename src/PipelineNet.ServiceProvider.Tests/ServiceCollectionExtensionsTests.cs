@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PipelineNet.Middleware;
-using PipelineNet.PipelineFactories;
 using PipelineNet.Pipelines;
+using PipelineNet.ServiceProvider.MiddlewareResolver;
 using Xunit.Abstractions;
 
 namespace PipelineNet.ServiceProvider.Tests
@@ -28,23 +28,18 @@ namespace PipelineNet.ServiceProvider.Tests
 
         public class MyService : IMyService
         {
-            private readonly IAsyncPipelineFactory<Bitmap> _pipelineFactory;
+            private readonly IAsyncPipeline<Bitmap> _pipeline;
 
-            public MyService(IAsyncPipelineFactory<Bitmap> pipelineFactory)
+            public MyService(IAsyncPipeline <Bitmap> pipeline)
             {
-                _pipelineFactory = pipelineFactory;
+                _pipeline = pipeline;
             }
 
             public async Task DoSomething()
             {
-                IAsyncPipeline<Bitmap> pipeline = _pipelineFactory.Create()
-                    .Add<RoudCornersAsyncMiddleware>()
-                    .Add<AddTransparencyAsyncMiddleware>()
-                    .Add<AddWatermarkAsyncMiddleware>();
-
                 Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
 
-                await pipeline.Execute(image);
+                await _pipeline.Execute(image);
             }
         }
         #endregion
@@ -130,7 +125,7 @@ namespace PipelineNet.ServiceProvider.Tests
             }
 
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull =>
-        new NullScope();
+                new NullScope();
 
             public bool IsEnabled(LogLevel logLevel) => true;
 
@@ -157,7 +152,14 @@ namespace PipelineNet.ServiceProvider.Tests
         public async Task AddPipelineNet_Works_Readme()
         {
             var serviceProvider = new ServiceCollection()
-                .AddPipelineNet(typeof(RoudCornersAsyncMiddleware).Assembly)
+                .AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly)
+                .AddScoped<IAsyncPipeline<Bitmap>>(serviceProvider =>
+                {
+                    return new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
+                        .Add<RoudCornersAsyncMiddleware>()
+                        .Add<AddTransparencyAsyncMiddleware>()
+                        .Add<AddWatermarkAsyncMiddleware>();
+                })
                 .AddScoped<IMyService, MyService>()
                 .AddLogging(bulider => bulider.Services.AddSingleton<ILoggerProvider>(new TestOutputHelperLoggerProvider(_output)))
                 .BuildServiceProvider();
