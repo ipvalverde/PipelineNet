@@ -24,7 +24,6 @@ dotnet add package PipelineNet
 - [Middleware](#middleware)
 - [Pipelines](#pipelines)
 - [Chains of responsibility](#chains-of-responsibility)
-- [Middleware flow factories](#middleware-flow-factories)
 - [Middleware resolver](#middleware-resolver)
   - [ServiceProvider implementation](#serviceprovider-implementation)
   - [Unity implementation](#unity-implementation)
@@ -197,23 +196,6 @@ result = await exceptionHandlersChain.Execute(new ArgumentException()); // Resul
 result = await exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be false
 ```
 
-## Middleware flow factories
-Instead of instantiating pipelines and chains of responsibility directly, you can use factories to instantiate them:
-```C#
-IAsyncPipelineFactory<Bitmap> pipelineFactory = new AsyncPipelineFactory<Bitmap>(new ActivatorMiddlewareResovler());
-
-IAsyncPipeline<Bitmap> pipeline = pipelineFactory.Create()
-    .Add<RoudCornersAsyncMiddleware>()
-    .Add<AddTransparencyAsyncMiddleware>()
-    .Add<AddWatermarkAsyncMiddleware>();
-```
-
-There are four types of factories:
-- `PipelineFactory<TParamater>` for pipelines.
-- `AsyncPipelineFactory<TParamater>` for asynchronous pipelines.
-- `ResponsibilityChainFactory<TParameter, TReturn>` for chains of responsibility.
-- `AsyncResponsibilityChainFactory<TParameter, TReturn>` for asynchronous chains of responsibility.
-
 ## Middleware resolver
 You may be wondering what is all this `ActivatorMiddlewareResolver` class being passed to every instance of pipeline and chain of responsibility.
 This is a default implementation of the `IMiddlewareResolver`, which is used to create instances of the middleware types.
@@ -232,14 +214,16 @@ You can grab it from nuget with:
 Install-Package PipelineNet.ServiceProvider
 ```
 
-Use it with `ServiceCollectionExtensions`:
+Use it with dependency injection:
 ```C#
-// The following line adds:
-// - all middleware from assembly
-// - service provider middleware resolver
-// - open generic middleware flow factories
-// with default scoped lifetime
-services.AddPipelineNet(typeof(RoudCornersAsyncMiddleware).Assembly);
+services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly);
+services.AddScoped<IAsyncPipeline<Bitmap>>(serviceProvider =>
+{
+    return new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
+        .Add<RoudCornersAsyncMiddleware>()
+        .Add<AddTransparencyAsyncMiddleware>()
+        .Add<AddWatermarkAsyncMiddleware>();
+});
 services.AddScoped<IMyService, MyService>();
 
 public interface IMyService
@@ -249,23 +233,17 @@ public interface IMyService
 
 public class MyService : IMyService
 {
-    private readonly IAsyncPipelineFactory<Bitmap> _pipelineFactory;
+    private readonly IAsyncPipeline<Bitmap> _pipeline;
 
-    public MyService(IAsyncPipelineFactory<Bitmap> pipelineFactory)
+    public MyService(IAsyncPipeline<Bitmap> pipeline)
     {
-        _pipelineFactory = pipelineFactory;
+        _pipeline = pipeline;
     }
 
     public async Task DoSomething()
     {
-        IAsyncPipeline<Bitmap> pipeline = _pipelineFactory.Create()
-            .Add<RoudCornersAsyncMiddleware>()
-            .Add<AddTransparencyAsyncMiddleware>()
-            .Add<AddWatermarkAsyncMiddleware>();
-
         Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
-
-        await pipeline.Execute(image);
+        await _pipeline.Execute(image);
     }
 }
 
@@ -287,7 +265,7 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 }
 ```
 
-Alternatively, you can instantiate `ServiceProviderMiddlewareResolver` directly:
+Or instantiate pipeline/chain of responsibility directly:
 ```C#
 services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly);
 
@@ -303,7 +281,6 @@ public class MyService : IMyService
             .Add<AddWatermarkAsyncMiddleware>();
 
         Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
-
         await pipeline.Execute(image);
     }
 
