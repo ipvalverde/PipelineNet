@@ -1,7 +1,7 @@
 ﻿using PipelineNet.ChainsOfResponsibility;
+using PipelineNet.Finally;
 using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
-using System;
 using Xunit;
 
 namespace PipelineNet.Tests.ChainsOfResponsibility
@@ -63,6 +63,15 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
                 return executeNext(exception);
             }
         }
+
+        public class FinallyThrow : IFinally<Exception, bool>
+        {
+            public bool Finally(Exception parameter)
+            {
+                throw new InvalidOperationException(
+                    "End of the chain of responsibility reached. No middleware matches returned a value.");
+            }
+        }
         #endregion
 
         [Fact]
@@ -102,6 +111,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             Assert.Equal(default(bool), result);
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         [Fact]
         public void Execute_ChainOfMiddlewareWithFinallyFunc_FinallyFuncIsExecuted()
         {
@@ -127,6 +137,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
             Assert.Equal(ExceptionSource, exception.Source);
         }
+#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <summary>
         /// Tests the <see cref="ResponsibilityChain{TParameter, TReturn}.Chain(Type)"/> method.
@@ -140,5 +151,23 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
                 responsibilityChain.Chain(typeof(ResponsibilityChainTests));
             });
         }
+
+        [Fact]
+        public void Execute_ChainOfMiddlewareWithFinally_FinallyIsExecuted()
+        {
+            var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+                .Chain<UnavailableResourcesExceptionHandler>()
+                .Chain(typeof(InvalidateDataExceptionHandler))
+                .Chain<MyExceptionHandler>()
+                .Finally<FinallyThrow>();
+
+            // Creates an ArgumentNullException. The 'MyExceptionHandler'
+            // middleware should be the last one to execute.
+            var exception = new ArgumentNullException();
+
+            // The 'FinallyThrow' should throw 'InvalidOperationException'.
+            Assert.Throws<InvalidOperationException>(() => responsibilityChain.Execute(exception));
+        }
+
     }
 }
