@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using PipelineNet.Finally;
 using PipelineNet.Middleware;
 using System;
 using System.Collections.Generic;
