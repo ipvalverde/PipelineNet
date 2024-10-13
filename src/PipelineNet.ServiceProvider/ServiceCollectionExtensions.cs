@@ -33,7 +33,9 @@ namespace PipelineNet.ServiceProvider
                 typeof(IMiddleware<>),
                 typeof(IAsyncMiddleware<>),
                 typeof(IMiddleware<,>),
-                typeof(IAsyncMiddleware<,>)
+                typeof(IAsyncMiddleware<,>),
+                typeof(ICancellableAsyncFinally<,>),
+                typeof(IAsyncFinally<,>)
             };
 
             var types = assembly.GetTypes();
