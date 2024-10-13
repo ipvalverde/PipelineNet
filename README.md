@@ -242,31 +242,36 @@ You can grab it from nuget with:
 Install-Package PipelineNet.ServiceProvider
 ```
 
-Use it as follows:
-
+Use it with dependency injection:
 ```C#
-services.AddScoped<IMyPipelineFactory, MyPipelineFactory>();
-
-public interface IMyPipelineFactory
+services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly);
+services.AddScoped<IAsyncPipeline<Bitmap>>(serviceProvider =>
 {
-    IAsyncPipeline<Bitmap> CreatePipeline();
+    return new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
+        .Add<RoudCornersAsyncMiddleware>()
+        .Add<AddTransparencyAsyncMiddleware>()
+        .Add<AddWatermarkAsyncMiddleware>();
+});
+services.AddScoped<IMyService, MyService>();
+
+public interface IMyService
+{
+    Task DoSomething();
 }
 
-public class MyPipelineFactory : IMyPipelineFactory
+public class MyService : IMyService
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IAsyncPipeline<Bitmap> _pipeline;
 
-    public MyPipelineFactory(IServiceProvider serviceProvider)
+    public MyService(IAsyncPipeline<Bitmap> pipeline)
     {
-        _serviceProvider = serviceProvider;
+        _pipeline = pipeline;
     }
 
-    public IAsyncPipeline<Bitmap> CreatePipeline()
+    public async Task DoSomething()
     {
-        return new AsyncPipeline<Bitmap>(new ActivatorUtilitiesMiddlewareResolver(_serviceProvider)) // Pass ActivatorUtilitiesMiddlewareResolver
-            .Add<RoudCornersAsyncMiddleware>()
-            .Add<AddTransparencyAsyncMiddleware>()
-            .Add<AddWatermarkAsyncMiddleware>();
+        Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
+        await _pipeline.Execute(image);
     }
 }
 
@@ -274,7 +279,6 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 {
     private readonly ILogger<RoudCornersAsyncMiddleware> _logger;
 
-    // The following constructor argument will be provided by IServiceProvider
     public RoudCornersAsyncMiddleware(ILogger<RoudCornersAsyncMiddleware> logger)
     {
         _logger = logger;
@@ -286,6 +290,29 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
         // Handle somehow
         await next(parameter);
     }
+}
+```
+
+Or instantiate pipeline/chain of responsibility directly:
+```C#
+services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly);
+
+public class MyService : IMyService
+{
+    public async Task DoSomething()
+    {
+        IServiceProvider serviceProvider = GetServiceProvider();
+
+        IAsyncPipeline<Bitmap> pipeline = new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
+            .Add<RoudCornersAsyncMiddleware>()
+            .Add<AddTransparencyAsyncMiddleware>()
+            .Add<AddWatermarkAsyncMiddleware>();
+
+        Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
+        await pipeline.Execute(image);
+    }
+
+    private IServiceProvider GetServiceProvider() => // Get service provider somehow
 }
 ```
 
