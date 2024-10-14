@@ -5,9 +5,20 @@ using System.Reflection;
 
 namespace PipelineNet
 {
+    /// <summary>
+    /// Defines the base class for middleware flows.
+    /// </summary>
+    /// <typeparam name="TMiddleware">The middleware type.</typeparam>
     public abstract class BaseMiddlewareFlow<TMiddleware>
     {
+        /// <summary>
+        /// The list of middleware types.
+        /// </summary>
         protected IList<Type> MiddlewareTypes { get; private set; }
+
+        /// <summary>
+        /// The resolver used to create the middleware types.
+        /// </summary>
         protected IMiddlewareResolver MiddlewareResolver { get; private set; }
 
         internal BaseMiddlewareFlow(IMiddlewareResolver middlewareResolver)

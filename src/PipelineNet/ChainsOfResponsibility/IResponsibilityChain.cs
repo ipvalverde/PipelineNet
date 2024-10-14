@@ -1,4 +1,5 @@
-﻿using PipelineNet.Middleware;
+﻿using PipelineNet.Finally;
+using PipelineNet.Middleware;
 using System;
 
 namespace PipelineNet.ChainsOfResponsibility
@@ -11,12 +12,32 @@ namespace PipelineNet.ChainsOfResponsibility
     public interface IResponsibilityChain<TParameter, TReturn>
     {
         /// <summary>
+        /// Sets the finally to be executed at the end of the chain as a fallback.
+        /// A chain can only have one finally type. Calling this method more
+        /// a second time will just replace the existing finally type.
+        /// </summary>
+        /// <typeparam name="TFinally">The finally being set.</typeparam>
+        /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
+        IResponsibilityChain<TParameter, TReturn> Finally<TFinally>()
+            where TFinally : IFinally<TParameter, TReturn>;
+
+        /// <summary>
+        /// Sets the finally to be executed at the end of the chain as a fallback.
+        /// A chain can only have one finally type. Calling this method more
+        /// a second time will just replace the existing finally type.
+        /// </summary>
+        /// <param name="finallyType">The <see cref="IFinally{TParameter, TReturn}"/> that will be execute at the end of chain.</param>
+        /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
+        IResponsibilityChain<TParameter, TReturn> Finally(Type finallyType);
+
+        /// <summary>
         /// Sets the function to be executed at the end of the chain as a fallback.
         /// A chain can only have one finally function. Calling this method more
         /// a second time will just replace the existing finally <see cref="Func{TParameter, TResult}"/>.
         /// </summary>
         /// <param name="finallyFunc">The <see cref="Func{TParameter, TResult}"/> that will be execute at the end of chain.</param>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
+        [Obsolete("This overload is obsolete. Use Finally<TFinally>.")]
         IResponsibilityChain<TParameter, TReturn> Finally(Func<TParameter, TReturn> finallyFunc);
 
         /// <summary>

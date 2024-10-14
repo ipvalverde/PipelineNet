@@ -28,6 +28,7 @@ dotnet add package PipelineNet
 - [Middleware resolver](#middleware-resolver)
   - [ServiceProvider implementation](#serviceprovider-implementation)
   - [Unity implementation](#unity-implementation)
+- [Migrate from PipelineNet 0.10 to 0.20](#migrate-from-pipelinenet-010-to-020)
 - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -82,28 +83,50 @@ result = exceptionHandlersChain.Execute(new ArgumentExceptionHandler()); // Resu
 // If no middleware matches returns a value, the default of the return type is returned, which in the case of 'bool' is false.
 result = exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be false
 ```
-You can even define a fallback function that will be executed after your entire chain:
+You can even define a fallback that will be executed after your entire chain:
 ```C#
 var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentExceptionHandler>()
-    .Finally((parameter) =>
+    .Finally<FinallyDoSomething>();
+
+public class FinallyDoSomething : IFinally<Exception, bool>
+{
+    public bool Finally(Exception parameter)
     {
         // Do something
         return true;
-    });
+    }
+}
 ```
 Now if the same line gets executed:
 ```C#
 var result = exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be true
 ```
-The result will be true because of the function defined in the `Finally` method.
+The result will be true because of the type used in the `Finally` method.
+
+You can also choose to throw an exception in the `Finally` method instead of returning a value:
+```C#
+var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+    .Chain<OutOfMemoryExceptionHandler>()
+    .Chain<ArgumentExceptionHandler>()
+    .Finally<ThrowInvalidOperationException>();
+
+public class ThrowInvalidOperationException : IFinally<Exception, bool>
+{
+    public bool Finally(Exception parameter)
+    {
+        throw new InvalidOperationException("End of the chain of responsibility reached. No middleware matches returned a value.");
+    }
+}
+```
+Now if the end of the chain was reached and no middleware matches returned a value, the `InvalidOperationException` will be thrown.
 
 ## Pipeline vs Chain of responsibility
 Here is the difference between those two in PipelineNet:
 - Chain of responsibility:
     - Returns a value;
-    - Have a fallback function to execute at the end of the chain;
+    - Have a fallback to execute at the end of the chain;
     - Used when you want that only one middleware to get executed based on an input, like the exception handling example;
 - Pipeline:
     - Does not return a value;
@@ -169,9 +192,9 @@ Task.WaitAll(new Task[]{ task1, task2, task3 });
 The chain of responsibility also has two implementations: `ResponsibilityChain<TParameter, TReturn>` and `AsyncResponsibilityChain<TParameter, TReturn>`.
 Both have the same functionaly, aggregate and execute a series of middleware retrieving a return type.
 
-One difference of chain responsibility when compared to pipeline is the fallback function that can be defined with
-the `Finally` method. You can set one function for chain of responsibility, calling the method more than once
-will replace the previous function defined.
+One difference of chain responsibility when compared to pipeline is the fallback that can be defined with
+the `Finally` method. You can set one finally for chain of responsibility, calling the method more than once
+will replace the previous type used.
 
 As we already have an example of a chain of responsibility, here is an example using the asynchronous implementation:
 If you want to, you can use the asynchronous version, using asynchronous middleware. Changing the instantiation to:
@@ -179,11 +202,16 @@ If you want to, you can use the asynchronous version, using asynchronous middlew
 var exceptionHandlersChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryAsyncExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentAsyncExceptionHandler>()
-    .Finally((ex) =>
+    .Finally<ExceptionHandlerFallback>();
+
+public class ExceptionHandlerFallback : IAsyncFinally<Exception, bool>
+{
+    public Task<bool> Finally(Exception parameter)
     {
-        ex.Source = ExceptionSource;
+        parameter.Data.Add("MoreExtraInfo", "More information about the exception.");
         return Task.FromResult(true);
-    });
+    }
+}
 ```
 And here is the execution:
 ```C#
@@ -246,31 +274,36 @@ You can grab it from nuget with:
 Install-Package PipelineNet.ServiceProvider
 ```
 
-Use it as follows:
-
+Use it with dependency injection:
 ```C#
-services.AddScoped<IMyPipelineFactory, MyPipelineFactory>();
-
-public interface IMyPipelineFactory
+services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly);
+services.AddScoped<IAsyncPipeline<Bitmap>>(serviceProvider =>
 {
-    IAsyncPipeline<Bitmap> CreatePipeline();
+    return new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
+        .Add<RoudCornersAsyncMiddleware>()
+        .Add<AddTransparencyAsyncMiddleware>()
+        .Add<AddWatermarkAsyncMiddleware>();
+});
+services.AddScoped<IMyService, MyService>();
+
+public interface IMyService
+{
+    Task DoSomething();
 }
 
-public class MyPipelineFactory : IMyPipelineFactory
+public class MyService : IMyService
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IAsyncPipeline<Bitmap> _pipeline;
 
-    public MyPipelineFactory(IServiceProvider serviceProvider)
+    public MyService(IAsyncPipeline<Bitmap> pipeline)
     {
-        _serviceProvider = serviceProvider;
+        _pipeline = pipeline;
     }
 
-    public IAsyncPipeline<Bitmap> CreatePipeline()
+    public async Task DoSomething()
     {
-        return new AsyncPipeline<Bitmap>(new ActivatorUtilitiesMiddlewareResolver(_serviceProvider)) // Pass ActivatorUtilitiesMiddlewareResolver
-            .Add<RoudCornersAsyncMiddleware>()
-            .Add<AddTransparencyAsyncMiddleware>()
-            .Add<AddWatermarkAsyncMiddleware>();
+        Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
+        await _pipeline.Execute(image);
     }
 }
 
@@ -278,7 +311,6 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 {
     private readonly ILogger<RoudCornersAsyncMiddleware> _logger;
 
-    // The following constructor argument will be provided by IServiceProvider
     public RoudCornersAsyncMiddleware(ILogger<RoudCornersAsyncMiddleware> logger)
     {
         _logger = logger;
@@ -293,6 +325,29 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 }
 ```
 
+Or instantiate pipeline/chain of responsibility directly:
+```C#
+services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly);
+
+public class MyService : IMyService
+{
+    public async Task DoSomething()
+    {
+        IServiceProvider serviceProvider = GetServiceProvider();
+
+        IAsyncPipeline<Bitmap> pipeline = new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
+            .Add<RoudCornersAsyncMiddleware>()
+            .Add<AddTransparencyAsyncMiddleware>()
+            .Add<AddWatermarkAsyncMiddleware>();
+
+        Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
+        await pipeline.Execute(image);
+    }
+
+    private IServiceProvider GetServiceProvider() => // Get service provider somehow
+}
+```
+
 Note that `IServiceProvider` lifetime can vary based on the lifetime of the containing class. For example, if you resolve service from a scope, and it takes an `IServiceProvider`, it'll be a scoped instance.
 
 For more information on dependency injection, see: [Dependency injection - .NET](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection).
@@ -303,6 +358,37 @@ An implementation of the [middleware resolver for Unity](https://github.com/Shan
 
 ```
 Install-Package PipelineNet.Unity
+```
+
+## Migrate from PipelineNet 0.10 to 0.20
+In PipelineNet 0.20, `Finally` overloads that use `Func` have been made obsolete. This will be removed in the next major version.
+
+To migrate replace:
+```C#
+var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+    .Chain<OutOfMemoryExceptionHandler>()
+    .Chain<ArgumentExceptionHandler>()
+    .Finally((parameter) =>
+    {
+        // Do something
+        return true;
+    });
+```
+With:
+```C#
+var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+    .Chain<OutOfMemoryExceptionHandler>()
+    .Chain<ArgumentExceptionHandler>()
+    .Finally<FinallyDoSomething>();
+
+public class FinallyDoSomething : IFinally<Exception, bool>
+{
+    public bool Finally(Exception parameter)
+    {
+        // Do something
+        return true;
+    }
+}
 ```
 
 ## License

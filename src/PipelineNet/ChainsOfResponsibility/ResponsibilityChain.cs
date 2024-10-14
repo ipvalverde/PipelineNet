@@ -1,6 +1,8 @@
-﻿using PipelineNet.Middleware;
+﻿using PipelineNet.Finally;
+using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
 using System;
+using System.Reflection;
 
 namespace PipelineNet.ChainsOfResponsibility
 {
@@ -12,6 +14,12 @@ namespace PipelineNet.ChainsOfResponsibility
     public class ResponsibilityChain<TParameter, TReturn> : BaseMiddlewareFlow<IMiddleware<TParameter, TReturn>>,
         IResponsibilityChain<TParameter, TReturn>
     {
+        /// <summary>
+        /// Stores the <see cref="TypeInfo"/> of the finally type.
+        /// </summary>
+        private static readonly TypeInfo FinallyTypeInfo = typeof(IFinally<TParameter, TReturn>).GetTypeInfo();
+
+        private Type _finallyType;
         private Func<TParameter, TReturn> _finallyFunc;
 
         /// <summary>
@@ -23,12 +31,44 @@ namespace PipelineNet.ChainsOfResponsibility
         }
 
         /// <summary>
+        /// Sets the finally to be executed at the end of the chain as a fallback.
+        /// A chain can only have one finally type. Calling this method more
+        /// a second time will just replace the existing finally type.
+        /// </summary>
+        /// <typeparam name="TFinally">The finally being set.</typeparam>
+        /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
+        public IResponsibilityChain<TParameter, TReturn> Finally<TFinally>()
+            where TFinally : IFinally<TParameter, TReturn> =>
+            Finally(typeof(TFinally));
+
+        /// <summary>
+        /// Sets the finally to be executed at the end of the chain as a fallback.
+        /// A chain can only have one finally type. Calling this method more
+        /// a second time will just replace the existing finally type.
+        /// </summary>
+        /// <param name="finallyType">The <see cref="IFinally{TParameter, TReturn}"/> that will be execute at the end of chain.</param>
+        /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
+        public IResponsibilityChain<TParameter, TReturn> Finally(Type finallyType)
+        {
+            if (finallyType == null) throw new ArgumentNullException("finallyType");
+
+            bool isAssignableFromFinally = FinallyTypeInfo.IsAssignableFrom(finallyType.GetTypeInfo());
+            if (!isAssignableFromFinally)
+                throw new ArgumentException(
+                    $"The finally type must implement \"{typeof(IFinally<TParameter, TReturn>)}\".");
+
+            _finallyType = finallyType;
+            return this;
+        }
+
+        /// <summary>
         /// Sets the function to be executed at the end of the chain as a fallback.
         /// A chain can only have one finally function. Calling this method more
         /// a second time will just replace the existing finally <see cref="Func{TParameter, TResult}"/>.
         /// </summary>
         /// <param name="finallyFunc">The <see cref="Func{TParameter, TResult}"/> that will be execute at the end of chain.</param>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
+        [Obsolete("This overload is obsolete. Use Finally<TFinally>.")]
         public IResponsibilityChain<TParameter, TReturn> Finally(Func<TParameter, TReturn> finallyFunc)
         {
             this._finallyFunc = finallyFunc;
@@ -77,6 +117,7 @@ namespace PipelineNet.ChainsOfResponsibility
             func = (param) =>
             {
                 MiddlewareResolverResult resolverResult = null;
+                MiddlewareResolverResult finallyResolverResult = null;
                 try
                 {
                     var type = MiddlewareTypes[index];
@@ -87,7 +128,41 @@ namespace PipelineNet.ChainsOfResponsibility
                     // the "next" function is assigned to the finally function or a 
                     // default empty function.
                     if (index == MiddlewareTypes.Count)
-                        func = this._finallyFunc ?? ((p) => default(TReturn));
+                    {
+                        if (_finallyType != null)
+                        {
+                            finallyResolverResult = MiddlewareResolver.Resolve(_finallyType);
+
+                            if (finallyResolverResult == null || finallyResolverResult.Middleware == null)
+                            {
+                                throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve finally of type '{_finallyType}'.");
+                            }
+
+                            if (finallyResolverResult.IsDisposable && !(finallyResolverResult.Middleware is IDisposable))
+                            {
+#if NETSTANDARD2_1_OR_GREATER
+                                if (finallyResolverResult.Middleware is IAsyncDisposable)
+                                {
+                                    throw new InvalidOperationException($"'{finallyResolverResult.Middleware.GetType()}' type only implements IAsyncDisposable." +
+                                        " Use AsyncResponsibilityChain to execute the configured pipeline.");
+                                }
+#endif
+
+                                throw new InvalidOperationException($"'{finallyResolverResult.Middleware.GetType()}' type does not implement IDisposable.");
+                            }
+
+                            var @finally = (IFinally<TParameter, TReturn>)finallyResolverResult.Middleware;
+                            func = (p) => @finally.Finally(p);
+                        }
+                        else if (_finallyFunc != null)
+                        {
+                            func = _finallyFunc;
+                        }
+                        else
+                        {
+                            func = (p) => default(TReturn);
+                        }
+                    }
 
                     if (resolverResult == null || resolverResult.Middleware == null)
                     {
@@ -118,6 +193,18 @@ namespace PipelineNet.ChainsOfResponsibility
                         if (middleware != null)
                         {
                             if (middleware is IDisposable disposable)
+                            {
+                                disposable.Dispose();
+                            }
+                        }
+                    }
+
+                    if (finallyResolverResult != null && finallyResolverResult.IsDisposable)
+                    {
+                        var @finally = finallyResolverResult.Middleware;
+                        if (@finally != null)
+                        {
+                            if (@finally is IDisposable disposable)
                             {
                                 disposable.Dispose();
                             }

@@ -1,8 +1,7 @@
 ﻿using PipelineNet.ChainsOfResponsibility;
+using PipelineNet.Finally;
 using PipelineNet.Middleware;
 using PipelineNet.MiddlewareResolver;
-using System;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace PipelineNet.Tests.ChainsOfResponsibility
@@ -97,6 +96,24 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
                 return await executeNext(exception);
             }
         }
+
+        public class FinallyThrow : IAsyncFinally<Exception, bool>
+        {
+            public Task<bool> Finally(Exception exception)
+            {
+                throw new InvalidOperationException(
+                    "End of the asynchronous chain of responsibility reached. No middleware matches returned a value.");
+            }
+        }
+
+        public class FinallyThrowIfCancellationRequested : ICancellableAsyncFinally<Exception, bool>
+        {
+            public Task<bool> Finally(Exception exception, CancellationToken cancellationToken)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                return Task.FromResult(default(bool));
+            }
+        }
         #endregion
 
         [Fact]
@@ -136,6 +153,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             Assert.Equal(default(bool), result);
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         [Fact]
         public async Task Execute_ChainOfMiddlewareWithFinallyFunc_FinallyFuncIsExecuted()
         {
@@ -161,6 +179,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
             Assert.Equal(ExceptionSource, exception.Source);
         }
+#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <summary>
         /// Tests the <see cref="ResponsibilityChain{TParameter, TReturn}.Chain(Type)"/> method.
@@ -177,6 +196,7 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
 
 
 
+#pragma warning disable CS0618 // Type or member is obsolete
         /// <summary>
         /// Try to generate a deadlock in synchronous middleware.
         /// </summary>
@@ -211,6 +231,44 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             var cancellationToken = new CancellationToken(canceled: true);
 
             // The 'ThrowIfCancellationRequestedMiddleware' should throw 'OperationCanceledException'.
+            await Assert.ThrowsAsync<OperationCanceledException>(() => responsibilityChain.Execute(exception, cancellationToken));
+        }
+#pragma warning restore CS0618 // Type or member is obsolete
+
+        [Fact]
+        public async Task Execute_ChainOfMiddlewareWithFinally_FinallyIsExecuted()
+        {
+            var responsibilityChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+                .Chain<UnavailableResourcesExceptionHandler>()
+                .Chain(typeof(InvalidateDataExceptionHandler))
+                .Chain<MyExceptionHandler>()
+                .Finally<FinallyThrow>();
+
+            // Creates an ArgumentNullException. The 'MyExceptionHandler'
+            // middleware should be the last one to execute.
+            var exception = new ArgumentNullException();
+
+            // The 'FinallyThrow' should throw 'InvalidOperationException'.
+            await Assert.ThrowsAsync<InvalidOperationException>(() => responsibilityChain.Execute(exception));
+        }
+
+        [Fact]
+        public async Task Execute_ChainOfMiddlewareWithCancellableFinally_CancellableFinallyIsExecuted()
+        {
+            var responsibilityChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+                .Chain<UnavailableResourcesExceptionHandler>()
+                .Chain(typeof(InvalidateDataExceptionHandler))
+                .Chain<MyExceptionHandler>()
+                .CancellableFinally<FinallyThrowIfCancellationRequested>();
+
+            // Creates an ArgumentNullException. The 'MyExceptionHandler'
+            // middleware should be the last one to execute.
+            var exception = new ArgumentNullException();
+
+            // Create the cancellation token in the canceled state.
+            var cancellationToken = new CancellationToken(canceled: true);
+
+            // The 'FinallyThrowIfCancellationRequested' should throw 'OperationCanceledException'.
             await Assert.ThrowsAsync<OperationCanceledException>(() => responsibilityChain.Execute(exception, cancellationToken));
         }
     }

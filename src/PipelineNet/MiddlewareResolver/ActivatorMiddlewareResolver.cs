@@ -8,6 +8,7 @@ namespace PipelineNet.MiddlewareResolver
     /// </summary>
     public class ActivatorMiddlewareResolver : IMiddlewareResolver
     {
+        /// <inheritdoc/>
         public MiddlewareResolverResult Resolve(Type type)
         {
             var middleware = Activator.CreateInstance(type);
