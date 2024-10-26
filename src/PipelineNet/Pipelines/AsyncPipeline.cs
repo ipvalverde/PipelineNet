@@ -94,19 +94,6 @@ namespace PipelineNet.Pipelines
                         throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
                     }
 
-                    if (resolverResult.IsDisposable && !(resolverResult.Middleware is IDisposable
-#if NETSTANDARD2_1_OR_GREATER
-                        || resolverResult.Middleware is IAsyncDisposable
-#endif
-                        ))
-                    {
-                        throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type does not implement IDisposable" +
-#if NETSTANDARD2_1_OR_GREATER
-                            " or IAsyncDisposable" +
-#endif
-                            ".");
-                    }
-
                     if (resolverResult.Middleware is ICancellableAsyncMiddleware<TParameter> cancellableMiddleware)
                     {
                         await cancellableMiddleware.Run(param, action, cancellationToken).ConfigureAwait(false);
@@ -119,7 +106,7 @@ namespace PipelineNet.Pipelines
                 }
                 finally
                 {
-                    if (resolverResult != null && resolverResult.IsDisposable)
+                    if (resolverResult != null && resolverResult.Dispose)
                     {
                         var middleware = resolverResult.Middleware;
                         if (middleware != null)

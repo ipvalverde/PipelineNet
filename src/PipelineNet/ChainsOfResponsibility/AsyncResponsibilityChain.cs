@@ -120,19 +120,6 @@ namespace PipelineNet.ChainsOfResponsibility
                                 throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve finally of type '{_finallyType}'.");
                             }
 
-                            if (finallyResolverResult.IsDisposable && !(finallyResolverResult.Middleware is IDisposable
-#if NETSTANDARD2_1_OR_GREATER
-                                || finallyResolverResult.Middleware is IAsyncDisposable
-#endif
-                                ))
-                            {
-                                throw new InvalidOperationException($"'{finallyResolverResult.Middleware.GetType()}' type does not implement IDisposable" +
-#if NETSTANDARD2_1_OR_GREATER
-                                    " or IAsyncDisposable" +
-#endif
-                                    ".");
-                            }
-
                             if (finallyResolverResult.Middleware is ICancellableAsyncFinally<TParameter, TReturn> cancellableFinally)
                             {
                                 func = async (p) => await cancellableFinally.Finally(p, cancellationToken).ConfigureAwait(false);
@@ -158,19 +145,6 @@ namespace PipelineNet.ChainsOfResponsibility
                         throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
                     }
 
-                    if (resolverResult.IsDisposable && !(resolverResult.Middleware is IDisposable
-#if NETSTANDARD2_1_OR_GREATER
-                        || resolverResult.Middleware is IAsyncDisposable
-#endif
-    ))
-                    {
-                        throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type does not implement IDisposable" +
-#if NETSTANDARD2_1_OR_GREATER
-                            " or IAsyncDisposable" +
-#endif
-                            ".");
-                    }
-
                     if (resolverResult.Middleware is ICancellableAsyncMiddleware<TParameter, TReturn> cancellableMiddleware)
                     {
                         return await cancellableMiddleware.Run(param, func, cancellationToken).ConfigureAwait(false);
@@ -183,7 +157,7 @@ namespace PipelineNet.ChainsOfResponsibility
                 }
                 finally
                 {
-                    if (resolverResult != null && resolverResult.IsDisposable)
+                    if (resolverResult != null && resolverResult.Dispose)
                     {
                         var middleware = resolverResult.Middleware;
                         if (middleware != null)
@@ -202,7 +176,7 @@ namespace PipelineNet.ChainsOfResponsibility
                         }
                     }
 
-                    if (finallyResolverResult != null && finallyResolverResult.IsDisposable)
+                    if (finallyResolverResult != null && finallyResolverResult.Dispose)
                     {
                         var @finally = finallyResolverResult.Middleware;
                         if (@finally != null)

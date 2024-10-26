@@ -72,25 +72,12 @@ namespace PipelineNet.Pipelines
                         throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
                     }
 
-                    if (resolverResult.IsDisposable && !(resolverResult.Middleware is IDisposable))
-                    {
-#if NETSTANDARD2_1_OR_GREATER
-                        if (resolverResult.Middleware is IAsyncDisposable)
-                        {
-                            throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type only implements IAsyncDisposable." +
-                                " Use AsyncPipeline to execute the configured pipeline.");
-                        }
-#endif
-
-                        throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type does not implement IDisposable.");
-                    }
-
                     var middleware = (IMiddleware<TParameter>)resolverResult.Middleware;
                     middleware.Run(param, action);
                 }
                 finally
                 {
-                    if (resolverResult != null && resolverResult.IsDisposable)
+                    if (resolverResult != null && resolverResult.Dispose)
                     {
                         var middleware = resolverResult.Middleware;
                         if (middleware != null)
@@ -99,6 +86,13 @@ namespace PipelineNet.Pipelines
                             {
                                 disposable.Dispose();
                             }
+#if NETSTANDARD2_1_OR_GREATER
+                            else if (middleware is IAsyncDisposable)
+                            {
+                                throw new InvalidOperationException($"'{middleware.GetType()}' type only implements IAsyncDisposable." +
+                                    " Use AsyncPipeline to execute the configured pipeline.");
+                            }
+#endif
                         }
                     }
                 }

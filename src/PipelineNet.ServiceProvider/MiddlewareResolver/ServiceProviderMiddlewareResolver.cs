@@ -30,12 +30,12 @@ namespace PipelineNet.ServiceProvider.MiddlewareResolver
         public MiddlewareResolverResult Resolve(Type type)
         {
             var middleware = _serviceProvider.GetRequiredService(type);
-            bool isDisposable = false;
+            bool dispose = false;
 
             return new MiddlewareResolverResult()
             {
                 Middleware = middleware,
-                IsDisposable = isDisposable
+                Dispose = dispose
             };
         }
     }

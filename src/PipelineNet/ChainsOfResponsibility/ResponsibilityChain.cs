@@ -138,19 +138,6 @@ namespace PipelineNet.ChainsOfResponsibility
                                 throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve finally of type '{_finallyType}'.");
                             }
 
-                            if (finallyResolverResult.IsDisposable && !(finallyResolverResult.Middleware is IDisposable))
-                            {
-#if NETSTANDARD2_1_OR_GREATER
-                                if (finallyResolverResult.Middleware is IAsyncDisposable)
-                                {
-                                    throw new InvalidOperationException($"'{finallyResolverResult.Middleware.GetType()}' type only implements IAsyncDisposable." +
-                                        " Use AsyncResponsibilityChain to execute the configured pipeline.");
-                                }
-#endif
-
-                                throw new InvalidOperationException($"'{finallyResolverResult.Middleware.GetType()}' type does not implement IDisposable.");
-                            }
-
                             var @finally = (IFinally<TParameter, TReturn>)finallyResolverResult.Middleware;
                             func = (p) => @finally.Finally(p);
                         }
@@ -169,25 +156,12 @@ namespace PipelineNet.ChainsOfResponsibility
                         throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
                     }
 
-                    if (resolverResult.IsDisposable && !(resolverResult.Middleware is IDisposable))
-                    {
-#if NETSTANDARD2_1_OR_GREATER
-                        if (resolverResult.Middleware is IAsyncDisposable)
-                        {
-                            throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type only implements IAsyncDisposable." +
-                                " Use AsyncResponsibilityChain to execute the configured pipeline.");
-                        }
-#endif
-
-                        throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type does not implement IDisposable.");
-                    }
-
                     var middleware = (IMiddleware<TParameter, TReturn>)resolverResult.Middleware;
                     return middleware.Run(param, func);
                 }
                 finally
                 {
-                    if (resolverResult != null && resolverResult.IsDisposable)
+                    if (resolverResult != null && resolverResult.Dispose)
                     {
                         var middleware = resolverResult.Middleware;
                         if (middleware != null)
@@ -196,10 +170,17 @@ namespace PipelineNet.ChainsOfResponsibility
                             {
                                 disposable.Dispose();
                             }
+#if NETSTANDARD2_1_OR_GREATER
+                            else if (middleware is IAsyncDisposable)
+                            {
+                                throw new InvalidOperationException($"'{middleware.GetType()}' type only implements IAsyncDisposable." +
+                                    " Use AsyncResponsibilityChain to execute the configured pipeline.");
+                            }
+#endif
                         }
                     }
 
-                    if (finallyResolverResult != null && finallyResolverResult.IsDisposable)
+                    if (finallyResolverResult != null && finallyResolverResult.Dispose)
                     {
                         var @finally = finallyResolverResult.Middleware;
                         if (@finally != null)
@@ -208,6 +189,13 @@ namespace PipelineNet.ChainsOfResponsibility
                             {
                                 disposable.Dispose();
                             }
+#if NETSTANDARD2_1_OR_GREATER
+                            else if (@finally is IAsyncDisposable)
+                            {
+                                throw new InvalidOperationException($"'{@finally.GetType()}' type only implements IAsyncDisposable." +
+                                    " Use AsyncResponsibilityChain to execute the configured pipeline.");
+                            }
+#endif
                         }
                     }
                 }

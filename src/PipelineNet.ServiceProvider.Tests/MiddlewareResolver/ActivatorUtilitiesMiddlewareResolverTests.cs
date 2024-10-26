@@ -125,7 +125,7 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             var resolverResult = resolver.Resolve(typeof(ParameterlessConstructorMiddleware));
 
             Assert.NotNull(resolverResult.Middleware);
-            Assert.False(resolverResult.IsDisposable);
+            Assert.True(resolverResult.Dispose);
         }
 
         [Fact]
@@ -139,7 +139,7 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             var resolverResult = resolver.Resolve(typeof(TransientMiddleware));
 
             Assert.NotNull(resolverResult.Middleware);
-            Assert.False(resolverResult.IsDisposable);
+            Assert.True(resolverResult.Dispose);
         }
 
         [Fact]
@@ -154,7 +154,7 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             var resolverResult = resolver.Resolve(typeof(ScopedMiddleware));
 
             Assert.NotNull(resolverResult.Middleware);
-            Assert.False(resolverResult.IsDisposable);
+            Assert.True(resolverResult.Dispose);
         }
 
         [Fact]
@@ -168,7 +168,7 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             var resolverResult = resolver.Resolve(typeof(SingletonMiddleware));
 
             Assert.NotNull(resolverResult.Middleware);
-            Assert.False(resolverResult.IsDisposable);
+            Assert.True(resolverResult.Dispose);
         }
 
         [Fact]
@@ -182,7 +182,7 @@ namespace PipelineNet.ServiceProvider.Tests.MiddlewareResolver
             var resolverResult = resolver.Resolve(typeof(DisposableMiddleware));
 
             Assert.NotNull(resolverResult.Middleware);
-            Assert.True(resolverResult.IsDisposable);
+            Assert.True(resolverResult.Dispose);
         }
 
         [Fact]

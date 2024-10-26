@@ -12,10 +12,9 @@
 
         /// <summary>
         /// Gets or sets the value indicating whether the middleware should be disposed.
-        /// Set this to <see langword="true"/> if the middleware is IDisposable or
-        /// IAsyncDisposable (requires .NET Standard 2.1 or greater)
-        /// and is not disposed by a dependency injection container.
+        /// Set this to <see langword="true"/> if the middleware is not disposed
+        /// by a dependency injection container.
         /// </summary>
-        public bool IsDisposable { get; set; }
+        public bool Dispose { get; set; }
     }
 }
