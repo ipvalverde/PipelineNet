@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PipelineNet\PipelineNet.csproj" PrivateAssets="compile;contentfiles;build;analyzers" />
+    <ProjectReference Include="..\PipelineNet\PipelineNet.csproj" />
   </ItemGroup>
 
   <ItemGroup>
