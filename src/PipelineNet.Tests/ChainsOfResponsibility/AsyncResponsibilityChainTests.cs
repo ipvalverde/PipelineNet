@@ -271,5 +271,18 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             // The 'FinallyThrowIfCancellationRequested' should throw 'OperationCanceledException'.
             await Assert.ThrowsAsync<OperationCanceledException>(() => responsibilityChain.Execute(exception, cancellationToken));
         }
+
+        [Fact]
+        public async Task Execute_EmptyChainOfMiddlewareWithFinally_FinallyIsExecuted()
+        {
+            var responsibilityChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+                .Finally<FinallyThrow>();
+
+            // Creates an ArgumentNullException.
+            var exception = new ArgumentNullException();
+
+            // The 'FinallyThrow' should throw 'InvalidOperationException'.
+            await Assert.ThrowsAsync<InvalidOperationException>(() => responsibilityChain.Execute(exception));
+        }
     }
 }

@@ -113,7 +113,30 @@ namespace PipelineNet.ChainsOfResponsibility
         public TReturn Execute(TParameter parameter)
         {
             if (MiddlewareTypes.Count == 0)
-                return default(TReturn);
+            {
+                MiddlewareResolverResult finallyResolverResult = null;
+                try
+                {
+                    if (_finallyType != null)
+                    {
+                        finallyResolverResult = MiddlewareResolver.Resolve(_finallyType);
+                        EnsureMiddlewareNotNull(finallyResolverResult, _finallyType);
+                        return RunFinally(finallyResolverResult, parameter);
+                    }
+                    else if (_finallyFunc != null)
+                    {
+                        return _finallyFunc(parameter);
+                    }
+                    else
+                    {
+                        return default(TReturn);
+                    }
+                }
+                finally
+                {
+                    DisposeMiddleware(finallyResolverResult);
+                }
+            }
 
             int index = 0;
             Func<TParameter, TReturn> next = null;

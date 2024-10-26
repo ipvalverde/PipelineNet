@@ -92,7 +92,30 @@ namespace PipelineNet.ChainsOfResponsibility
         public async Task<TReturn> Execute(TParameter parameter, CancellationToken cancellationToken)
         {
             if (MiddlewareTypes.Count == 0)
-                return default(TReturn);
+            {
+                MiddlewareResolverResult finallyResolverResult = null;
+                try
+                {
+                    if (_finallyType != null)
+                    {
+                        finallyResolverResult = MiddlewareResolver.Resolve(_finallyType);
+                        EnsureMiddlewareNotNull(finallyResolverResult, _finallyType);
+                        return await RunFinallyAsync(finallyResolverResult, parameter, cancellationToken).ConfigureAwait(false);
+                    }
+                    else if (_finallyFunc != null)
+                    {
+                        return await _finallyFunc(parameter).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        return await Task.FromResult(default(TReturn)).ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    await DisposeMiddlewareAsync(finallyResolverResult).ConfigureAwait(false);
+                }
+            }
 
             int index = 0;
             Func<TParameter, Task<TReturn>> next = null;

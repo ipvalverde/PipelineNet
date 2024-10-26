@@ -169,5 +169,17 @@ namespace PipelineNet.Tests.ChainsOfResponsibility
             Assert.Throws<InvalidOperationException>(() => responsibilityChain.Execute(exception));
         }
 
+        [Fact]
+        public void Execute_EmptyChainOfMiddlewareWithFinally_FinallyIsExecuted()
+        {
+            var responsibilityChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
+                .Finally<FinallyThrow>();
+
+            // Creates an ArgumentNullException.
+            var exception = new ArgumentNullException();
+
+            // The 'FinallyThrow' should throw 'InvalidOperationException'.
+            Assert.Throws<InvalidOperationException>(() => responsibilityChain.Execute(exception));
+        }
     }
 }
