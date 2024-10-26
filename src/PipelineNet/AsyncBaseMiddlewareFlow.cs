@@ -83,7 +83,8 @@ namespace PipelineNet
                         await asyncDisposable.DisposeAsync().ConfigureAwait(false);
                     }
 #else
-                    await Task.FromResult(default(int)).ConfigureAwait(false);
+                    var completedTask = Task.FromResult(0);
+                    await completedTask.ConfigureAwait(false);
 #endif
                     if (middleware is IDisposable disposable)
                     {

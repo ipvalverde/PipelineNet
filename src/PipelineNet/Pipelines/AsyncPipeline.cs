@@ -87,7 +87,10 @@ namespace PipelineNet.Pipelines
 
                     index++;
                     if (index == MiddlewareTypes.Count)
-                        next = async (p) => await Task.FromResult(default(int)).ConfigureAwait(false);
+                    {
+                        var completedTask = Task.FromResult(0);
+                        next = async (p) => await completedTask.ConfigureAwait(false);
+                    }
 
                     EnsureMiddlewareNotNull(middlewareResolverResult, middlewareType);
                     await RunMiddlewareAsync(middlewareResolverResult, parameter2, next, cancellationToken).ConfigureAwait(false);
