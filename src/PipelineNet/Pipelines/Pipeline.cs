@@ -54,29 +54,29 @@ namespace PipelineNet.Pipelines
                 return;
 
             int index = 0;
-            Action<TParameter> action = null;
-            action = (param) =>
+            Action<TParameter> next = null;
+            next = (parameter2) =>
             {
-                MiddlewareResolverResult resolverResult = null;
+                MiddlewareResolverResult middlewareResolverResult = null;
                 try
                 {
-                    var type = MiddlewareTypes[index];
-                    resolverResult = MiddlewareResolver.Resolve(type);
+                    var middlewareType = MiddlewareTypes[index];
+                    middlewareResolverResult = MiddlewareResolver.Resolve(middlewareType);
 
                     index++;
                     if (index == MiddlewareTypes.Count)
-                        action = (p) => { };
+                        next = (p) => { };
 
-                    EnsureMiddlewareNotNull(resolverResult, type);
-                    RunMiddleware(resolverResult, param, action);
+                    EnsureMiddlewareNotNull(middlewareResolverResult, middlewareType);
+                    RunMiddleware(middlewareResolverResult, parameter2, next);
                 }
                 finally
                 {
-                    DisposeMiddleware(resolverResult);
+                    DisposeMiddleware(middlewareResolverResult);
                 }
             };
 
-            action(parameter);
+            next(parameter);
         }
 
         private static void RunMiddleware(MiddlewareResolverResult middlewareResolverResult, TParameter parameter, Action<TParameter> next)

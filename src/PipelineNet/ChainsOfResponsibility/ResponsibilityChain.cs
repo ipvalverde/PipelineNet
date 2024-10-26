@@ -116,15 +116,15 @@ namespace PipelineNet.ChainsOfResponsibility
                 return default(TReturn);
 
             int index = 0;
-            Func<TParameter, TReturn> func = null;
-            func = (param) =>
+            Func<TParameter, TReturn> next = null;
+            next = (parameter2) =>
             {
-                MiddlewareResolverResult resolverResult = null;
+                MiddlewareResolverResult middlewareResolverResult = null;
                 MiddlewareResolverResult finallyResolverResult = null;
                 try
                 {
-                    var type = MiddlewareTypes[index];
-                    resolverResult = MiddlewareResolver.Resolve(type);
+                    var middlewaretype = MiddlewareTypes[index];
+                    middlewareResolverResult = MiddlewareResolver.Resolve(middlewaretype);
 
                     index++;
                     // If the current instance of middleware is the last one in the list,
@@ -136,29 +136,29 @@ namespace PipelineNet.ChainsOfResponsibility
                         {
                             finallyResolverResult = MiddlewareResolver.Resolve(_finallyType);
                             EnsureMiddlewareNotNull(finallyResolverResult, _finallyType);
-                            func = (p) => RunFinally(finallyResolverResult, p);
+                            next = (p) => RunFinally(finallyResolverResult, p);
                         }
                         else if (_finallyFunc != null)
                         {
-                            func = _finallyFunc;
+                            next = _finallyFunc;
                         }
                         else
                         {
-                            func = (p) => default(TReturn);
+                            next = (p) => default(TReturn);
                         }
                     }
 
-                    EnsureMiddlewareNotNull(resolverResult, type);
-                    return RunMiddleware(resolverResult, param, func);
+                    EnsureMiddlewareNotNull(middlewareResolverResult, middlewaretype);
+                    return RunMiddleware(middlewareResolverResult, parameter2, next);
                 }
                 finally
                 {
-                    DisposeMiddleware(resolverResult);
+                    DisposeMiddleware(middlewareResolverResult);
                     DisposeMiddleware(finallyResolverResult);
                 }
             };
 
-            return func(parameter);
+            return next(parameter);
         }
 
         private static TReturn RunMiddleware(MiddlewareResolverResult middlewareResolverResult, TParameter parameter, Func<TParameter, TReturn> next)

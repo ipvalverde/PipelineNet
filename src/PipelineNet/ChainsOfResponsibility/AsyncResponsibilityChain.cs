@@ -95,15 +95,15 @@ namespace PipelineNet.ChainsOfResponsibility
                 return default(TReturn);
 
             int index = 0;
-            Func<TParameter, Task<TReturn>> func = null;
-            func = async (param) =>
+            Func<TParameter, Task<TReturn>> next = null;
+            next = async (parameter2) =>
             {
-                MiddlewareResolverResult resolverResult = null;
+                MiddlewareResolverResult middlewareResolverResult = null;
                 MiddlewareResolverResult finallyResolverResult = null;
                 try
                 {
-                    var type = MiddlewareTypes[index];
-                    resolverResult = MiddlewareResolver.Resolve(type);
+                    var middlewaretype = MiddlewareTypes[index];
+                    middlewareResolverResult = MiddlewareResolver.Resolve(middlewaretype);
 
                     index++;
                     // If the current instance of middleware is the last one in the list,
@@ -115,29 +115,29 @@ namespace PipelineNet.ChainsOfResponsibility
                         {
                             finallyResolverResult = MiddlewareResolver.Resolve(_finallyType);
                             EnsureMiddlewareNotNull(finallyResolverResult, _finallyType);
-                            func = async (p) => await RunFinallyAsync(finallyResolverResult, p, cancellationToken).ConfigureAwait(false);
+                            next = async (p) => await RunFinallyAsync(finallyResolverResult, p, cancellationToken).ConfigureAwait(false);
                         }
                         else if (_finallyFunc != null)
                         {
-                            func = _finallyFunc;
+                            next = _finallyFunc;
                         }
                         else
                         {
-                            func = async (p) => await Task.FromResult(default(TReturn)).ConfigureAwait(false);
+                            next = async (p) => await Task.FromResult(default(TReturn)).ConfigureAwait(false);
                         }
                     }
 
-                    EnsureMiddlewareNotNull(resolverResult, type);
-                    return await RunMiddlewareAsync(resolverResult, param, func, cancellationToken).ConfigureAwait(false);
+                    EnsureMiddlewareNotNull(middlewareResolverResult, middlewaretype);
+                    return await RunMiddlewareAsync(middlewareResolverResult, parameter2, next, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
-                    await DisposeMiddlewareAsync(resolverResult).ConfigureAwait(false);
+                    await DisposeMiddlewareAsync(middlewareResolverResult).ConfigureAwait(false);
                     await DisposeMiddlewareAsync(finallyResolverResult).ConfigureAwait(false);
                 }
             };
 
-            return await func(parameter).ConfigureAwait(false);
+            return await next(parameter).ConfigureAwait(false);
         }
 
         private static async Task<TReturn> RunMiddlewareAsync(

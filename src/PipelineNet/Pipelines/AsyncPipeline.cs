@@ -76,29 +76,29 @@ namespace PipelineNet.Pipelines
                 return;
 
             int index = 0;
-            Func<TParameter, Task> action = null;
-            action = async (param) =>
+            Func<TParameter, Task> next = null;
+            next = async (parameter2) =>
             {
-                MiddlewareResolverResult resolverResult = null;
+                MiddlewareResolverResult middlewareResolverResult = null;
                 try
                 {
-                    var type = MiddlewareTypes[index];
-                    resolverResult = MiddlewareResolver.Resolve(type);
+                    var middlewareType = MiddlewareTypes[index];
+                    middlewareResolverResult = MiddlewareResolver.Resolve(middlewareType);
 
                     index++;
                     if (index == MiddlewareTypes.Count)
-                        action = async (p) => await Task.FromResult(default(int)).ConfigureAwait(false);
+                        next = async (p) => await Task.FromResult(default(int)).ConfigureAwait(false);
 
-                    EnsureMiddlewareNotNull(resolverResult, type);
-                    await RunMiddlewareAsync(resolverResult, param, action, cancellationToken).ConfigureAwait(false);
+                    EnsureMiddlewareNotNull(middlewareResolverResult, middlewareType);
+                    await RunMiddlewareAsync(middlewareResolverResult, parameter2, next, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
-                    await DisposeMiddlewareAsync(resolverResult).ConfigureAwait(false);
+                    await DisposeMiddlewareAsync(middlewareResolverResult).ConfigureAwait(false);
                 }
             };
 
-            await action(parameter).ConfigureAwait(false);
+            await next(parameter).ConfigureAwait(false);
         }
 
         private static async Task RunMiddlewareAsync(
