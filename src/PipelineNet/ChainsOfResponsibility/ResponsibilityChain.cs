@@ -38,8 +38,11 @@ namespace PipelineNet.ChainsOfResponsibility
         /// <typeparam name="TFinally">The finally being set.</typeparam>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
         public IResponsibilityChain<TParameter, TReturn> Finally<TFinally>()
-            where TFinally : IFinally<TParameter, TReturn> =>
-            Finally(typeof(TFinally));
+            where TFinally : IFinally<TParameter, TReturn>
+        {
+            _finallyType = typeof(TFinally);
+            return this;
+        }
 
         /// <summary>
         /// Sets the finally to be executed at the end of the chain as a fallback.

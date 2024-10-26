@@ -208,8 +208,11 @@ namespace PipelineNet.ChainsOfResponsibility
         /// <typeparam name="TFinally">The finally being set.</typeparam>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
         public IAsyncResponsibilityChain<TParameter, TReturn> Finally<TFinally>()
-            where TFinally : IAsyncFinally<TParameter, TReturn> =>
-            Finally(typeof(TFinally));
+            where TFinally : IAsyncFinally<TParameter, TReturn>
+        {
+            _finallyType = typeof(TFinally);
+            return this;
+        }
 
         /// <summary>
         /// Sets the cancellable finally to be executed at the end of the chain as a fallback.
@@ -219,8 +222,11 @@ namespace PipelineNet.ChainsOfResponsibility
         /// <typeparam name="TCancellableFinally">The cancellable finally being set.</typeparam>
         /// <returns>The current instance of <see cref="IResponsibilityChain{TParameter, TReturn}"/>.</returns>
         public IAsyncResponsibilityChain<TParameter, TReturn> CancellableFinally<TCancellableFinally>()
-            where TCancellableFinally : ICancellableAsyncFinally<TParameter, TReturn> =>
-            Finally(typeof(TCancellableFinally));
+            where TCancellableFinally : ICancellableAsyncFinally<TParameter, TReturn>
+        {
+            _finallyType = typeof(TCancellableFinally);
+            return this;
+        }
 
         /// <summary>
         /// Sets the finally to be executed at the end of the chain as a fallback.
