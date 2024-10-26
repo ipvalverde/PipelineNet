@@ -24,6 +24,7 @@ dotnet add package PipelineNet
 - [Middleware](#middleware)
 - [Pipelines](#pipelines)
 - [Chains of responsibility](#chains-of-responsibility)
+- [Cancellation tokens](#cancellation-tokens)
 - [Middleware resolver](#middleware-resolver)
   - [ServiceProvider implementation](#serviceprovider-implementation)
   - [Unity implementation](#unity-implementation)
@@ -223,6 +224,37 @@ result = await exceptionHandlersChain.Execute(new ArgumentException()); // Resul
 // If no middleware matches returns a value, the default of the return type is returned, which in the case of 'bool' is false.
 result = await exceptionHandlersChain.Execute(new InvalidOperationException()); // Result will be false
 ```
+
+## Cancellation tokens
+If you want to pass the cancellation token to your asynchronous pipeline middleware, you can do so by implementing the `ICancellableAsyncMiddleware<TParameter>` interface
+and passing the cancellation token argument to the `IAsyncPipeline<TParameter>.Execute` method:
+```C#
+var pipeline = new AsyncPipeline<Bitmap>(new ActivatorMiddlewareResolver())
+    .AddCancellable<RoudCornersCancellableAsyncMiddleware>()
+    .Add<AddTransparencyAsyncMiddleware>() // You can mix both kinds of asynchronous middleware
+    .AddCancellable<AddWatermarkCancellableAsyncMiddleware>();
+
+Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
+CancellationToken cancellationToken = CancellationToken.None;
+await pipeline.Execute(image, cancellationToken);
+
+public class RoudCornersCancellableAsyncMiddleware : ICancellableAsyncMiddleware<Bitmap>
+{
+    public async Task Run(Bitmap parameter, Func<Bitmap, Task> next, CancellationToken cancellationToken)
+    {
+        await RoundCournersAsync(parameter, cancellationToken);
+        await next(parameter);
+    }
+
+    private async Task RoudCournersAsync(Bitmap bitmap, CancellationToken cancellationToken)
+    {
+        // Handle somehow
+        await Task.CompletedTask;
+    }
+}
+```
+And to pass the cancellation token to your asynchronous chain of responsibility middleware, you can implement the `ICancellableAsyncMiddleware<TParameter, TReturn>` interface
+and pass the cancellation token argument to the `IAsynchChainOfResponsibility<TParamete, TReturnr>.Execute` method.
 
 ## Middleware resolver
 You may be wondering what is all this `ActivatorMiddlewareResolver` class being passed to every instance of pipeline and chain of responsibility.

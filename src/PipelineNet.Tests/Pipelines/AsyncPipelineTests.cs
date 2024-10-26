@@ -71,6 +71,15 @@ namespace PipelineNet.Tests.Pipelines
                 await executeNext(context);
             }
         }
+
+        public class ThrowIfCancellationRequestedMiddleware : ICancellableAsyncMiddleware<PersonModel>
+        {
+            public async Task Run(PersonModel context, Func<PersonModel, Task> executeNext, CancellationToken cancellationToken)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await executeNext(context);
+            }
+        }
         #endregion
 
         [Fact]
@@ -161,6 +170,34 @@ namespace PipelineNet.Tests.Pipelines
             {
                 pipeline.Add(typeof(AsyncPipelineTests));
             });
+        }
+
+        [Fact]
+        public async Task Execute_RunPipelineWithCancellableMiddleware_CancellableMiddlewareIsExecuted()
+        {
+            var pipeline = new AsyncPipeline<PersonModel>(new ActivatorMiddlewareResolver())
+                .Add<PersonWithEvenId>()
+                .Add<PersonWithOddId>()
+                .Add<PersonWithEmailName>()
+                .Add<PersonWithGenderProperty>()
+                .AddCancellable<ThrowIfCancellationRequestedMiddleware>();
+
+            // Create a new instance with a 'Gender' property. The 'ThrowIfCancellationRequestedMiddleware'
+            // middleware should be the last one to execute.
+            var personModel = new PersonModel
+            {
+                Name = "this_is_my_email@servername.js",
+                Gender = Gender.Other
+            };
+
+            // Create the cancellation token in the canceled state.
+            var cancellationToken = new CancellationToken(canceled: true);
+
+            // Check if 'ThrowIfCancellationRequestedMiddleware' threw 'OperationCanceledException'.
+            await Assert.ThrowsAsync<OperationCanceledException>(() => pipeline.Execute(personModel, cancellationToken));
+
+            // Check if the level of 'personModel' is 4, which is configured by 'PersonWithGenderProperty' middleware.
+            Assert.Equal(4, personModel.Level);
         }
     }
 }
