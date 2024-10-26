@@ -135,14 +135,8 @@ namespace PipelineNet.ChainsOfResponsibility
                         if (_finallyType != null)
                         {
                             finallyResolverResult = MiddlewareResolver.Resolve(_finallyType);
-
-                            if (finallyResolverResult == null || finallyResolverResult.Middleware == null)
-                            {
-                                throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve finally of type '{_finallyType}'.");
-                            }
-
-                            var @finally = (IFinally<TParameter, TReturn>)finallyResolverResult.Middleware;
-                            func = (p) => @finally.Finally(p);
+                            EnsureMiddlewareNotNull(finallyResolverResult, _finallyType);
+                            func = (p) => RunFinally(finallyResolverResult, p);
                         }
                         else if (_finallyFunc != null)
                         {
@@ -154,57 +148,29 @@ namespace PipelineNet.ChainsOfResponsibility
                         }
                     }
 
-                    if (resolverResult == null || resolverResult.Middleware == null)
-                    {
-                        throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
-                    }
-
-                    var middleware = (IMiddleware<TParameter, TReturn>)resolverResult.Middleware;
-                    return middleware.Run(param, func);
+                    EnsureMiddlewareNotNull(resolverResult, type);
+                    return RunMiddleware(resolverResult, param, func);
                 }
                 finally
                 {
-                    if (resolverResult != null && resolverResult.Dispose)
-                    {
-                        var middleware = resolverResult.Middleware;
-                        if (middleware != null)
-                        {
-                            if (middleware is IDisposable disposable)
-                            {
-                                disposable.Dispose();
-                            }
-#if NETSTANDARD2_1_OR_GREATER
-                            else if (middleware is IAsyncDisposable)
-                            {
-                                throw new InvalidOperationException($"'{middleware.GetType()}' type only implements IAsyncDisposable." +
-                                    " Use AsyncResponsibilityChain to execute the configured pipeline.");
-                            }
-#endif
-                        }
-                    }
-
-                    if (finallyResolverResult != null && finallyResolverResult.Dispose)
-                    {
-                        var @finally = finallyResolverResult.Middleware;
-                        if (@finally != null)
-                        {
-                            if (@finally is IDisposable disposable)
-                            {
-                                disposable.Dispose();
-                            }
-#if NETSTANDARD2_1_OR_GREATER
-                            else if (@finally is IAsyncDisposable)
-                            {
-                                throw new InvalidOperationException($"'{@finally.GetType()}' type only implements IAsyncDisposable." +
-                                    " Use AsyncResponsibilityChain to execute the configured pipeline.");
-                            }
-#endif
-                        }
-                    }
+                    DisposeMiddleware(resolverResult);
+                    DisposeMiddleware(finallyResolverResult);
                 }
             };
 
             return func(parameter);
+        }
+
+        private static TReturn RunMiddleware(MiddlewareResolverResult middlewareResolverResult, TParameter parameter, Func<TParameter, TReturn> next)
+        {
+            var middleware = (IMiddleware<TParameter, TReturn>)middlewareResolverResult.Middleware;
+            return middleware.Run(parameter, next);
+        }
+
+        private static TReturn RunFinally(MiddlewareResolverResult finallyResolverResult, TParameter parameter)
+        {
+            var @finally = (IFinally<TParameter, TReturn>)finallyResolverResult.Middleware;
+            return @finally.Finally(parameter);
         }
     }
 }

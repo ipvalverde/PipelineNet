@@ -52,5 +52,35 @@ namespace PipelineNet
 
             this.MiddlewareTypes.Add(middlewareType);
         }
+
+        internal void EnsureMiddlewareNotNull(MiddlewareResolverResult middlewareResolverResult, Type middlewareType)
+        {
+            if (middlewareResolverResult == null || middlewareResolverResult.Middleware == null)
+            {
+                throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{middlewareType}'.");
+            }
+        }
+
+        internal static void DisposeMiddleware(MiddlewareResolverResult middlewareResolverResult)
+        {
+            if (middlewareResolverResult != null && middlewareResolverResult.Dispose)
+            {
+                var middleware = middlewareResolverResult.Middleware;
+                if (middleware != null)
+                {
+                    if (middleware is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+#if NETSTANDARD2_1_OR_GREATER
+                    else if (middleware is IAsyncDisposable)
+                    {
+                        throw new InvalidOperationException($"'{middleware.GetType()}' type only implements IAsyncDisposable." +
+                            " Use AsyncPipeline/AsyncResponsibilityChain to execute the configured pipeline/chain fo responsibility.");
+                    }
+#endif
+                }
+            }
+        }
     }
 }

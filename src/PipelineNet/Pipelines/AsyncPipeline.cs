@@ -87,47 +87,35 @@ namespace PipelineNet.Pipelines
 
                     index++;
                     if (index == MiddlewareTypes.Count)
-                        action = (p) => Task.FromResult(0);
+                        action = async (p) => await Task.FromResult(default(int)).ConfigureAwait(false);
 
-                    if (resolverResult == null || resolverResult.Middleware == null)
-                    {
-                        throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
-                    }
-
-                    if (resolverResult.Middleware is ICancellableAsyncMiddleware<TParameter> cancellableMiddleware)
-                    {
-                        await cancellableMiddleware.Run(param, action, cancellationToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var middleware = (IAsyncMiddleware<TParameter>)resolverResult.Middleware;
-                        await middleware.Run(param, action).ConfigureAwait(false);
-                    }
+                    EnsureMiddlewareNotNull(resolverResult, type);
+                    await RunMiddlewareAsync(resolverResult, param, action, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
-                    if (resolverResult != null && resolverResult.Dispose)
-                    {
-                        var middleware = resolverResult.Middleware;
-                        if (middleware != null)
-                        {
-#if NETSTANDARD2_1_OR_GREATER
-                            if (middleware is IAsyncDisposable asyncDisposable)
-                            {
-                                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                            }
-                            else
-#endif
-                            if (middleware is IDisposable disposable)
-                            {
-                                disposable.Dispose();
-                            }
-                        }
-                    }
+                    await DisposeMiddlewareAsync(resolverResult).ConfigureAwait(false);
                 }
             };
 
             await action(parameter).ConfigureAwait(false);
+        }
+
+        private static async Task RunMiddlewareAsync(
+            MiddlewareResolverResult resolverResult,
+            TParameter parameter,
+            Func<TParameter, Task> next,
+            CancellationToken cancellationToken)
+        {
+            if (resolverResult.Middleware is ICancellableAsyncMiddleware<TParameter> cancellableMiddleware)
+            {
+                await cancellableMiddleware.Run(parameter, next, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                var middleware = (IAsyncMiddleware<TParameter>)resolverResult.Middleware;
+                await middleware.Run(parameter, next).ConfigureAwait(false);
+            }
         }
     }
 }

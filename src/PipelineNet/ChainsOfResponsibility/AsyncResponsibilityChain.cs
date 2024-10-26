@@ -114,21 +114,8 @@ namespace PipelineNet.ChainsOfResponsibility
                         if (_finallyType != null)
                         {
                             finallyResolverResult = MiddlewareResolver.Resolve(_finallyType);
-
-                            if (finallyResolverResult == null || finallyResolverResult.Middleware == null)
-                            {
-                                throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve finally of type '{_finallyType}'.");
-                            }
-
-                            if (finallyResolverResult.Middleware is ICancellableAsyncFinally<TParameter, TReturn> cancellableFinally)
-                            {
-                                func = async (p) => await cancellableFinally.Finally(p, cancellationToken).ConfigureAwait(false);
-                            }
-                            else
-                            {
-                                var @finally = (IAsyncFinally<TParameter, TReturn>)finallyResolverResult.Middleware;
-                                func = async (p) => await @finally.Finally(p).ConfigureAwait(false);
-                            }
+                            EnsureMiddlewareNotNull(finallyResolverResult, _finallyType);
+                            func = async (p) => await RunFinallyAsync(finallyResolverResult, p, cancellationToken).ConfigureAwait(false);
                         }
                         else if (_finallyFunc != null)
                         {
@@ -136,68 +123,54 @@ namespace PipelineNet.ChainsOfResponsibility
                         }
                         else
                         {
-                            func = (p) => Task.FromResult(default(TReturn));
+                            func = async (p) => await Task.FromResult(default(TReturn)).ConfigureAwait(false);
                         }
                     }
 
-                    if (resolverResult == null || resolverResult.Middleware == null)
-                    {
-                        throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
-                    }
-
-                    if (resolverResult.Middleware is ICancellableAsyncMiddleware<TParameter, TReturn> cancellableMiddleware)
-                    {
-                        return await cancellableMiddleware.Run(param, func, cancellationToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var middleware = (IAsyncMiddleware<TParameter, TReturn>)resolverResult.Middleware;
-                        return await middleware.Run(param, func).ConfigureAwait(false);
-                    }
+                    EnsureMiddlewareNotNull(resolverResult, type);
+                    return await RunMiddlewareAsync(resolverResult, param, func, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
-                    if (resolverResult != null && resolverResult.Dispose)
-                    {
-                        var middleware = resolverResult.Middleware;
-                        if (middleware != null)
-                        {
-#if NETSTANDARD2_1_OR_GREATER
-                            if (middleware is IAsyncDisposable asyncDisposable)
-                            {
-                                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                            }
-                            else
-#endif
-                            if (middleware is IDisposable disposable)
-                            {
-                                disposable.Dispose();
-                            }
-                        }
-                    }
-
-                    if (finallyResolverResult != null && finallyResolverResult.Dispose)
-                    {
-                        var @finally = finallyResolverResult.Middleware;
-                        if (@finally != null)
-                        {
-#if NETSTANDARD2_1_OR_GREATER
-                            if (@finally is IAsyncDisposable asyncDisposable)
-                            {
-                                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                            }
-                            else
-#endif
-                            if (@finally is IDisposable disposable)
-                            {
-                                disposable.Dispose();
-                            }
-                        }
-                    }
+                    await DisposeMiddlewareAsync(resolverResult).ConfigureAwait(false);
+                    await DisposeMiddlewareAsync(finallyResolverResult).ConfigureAwait(false);
                 }
             };
 
             return await func(parameter).ConfigureAwait(false);
+        }
+
+        private static async Task<TReturn> RunMiddlewareAsync(
+            MiddlewareResolverResult middlewareResolverResult,
+            TParameter parameter,
+            Func<TParameter, Task<TReturn>> next,
+            CancellationToken cancellationToken)
+        {
+            if (middlewareResolverResult.Middleware is ICancellableAsyncMiddleware<TParameter, TReturn> cancellableMiddleware)
+            {
+                return await cancellableMiddleware.Run(parameter, next, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                var middleware = (IAsyncMiddleware<TParameter, TReturn>)middlewareResolverResult.Middleware;
+                return await middleware.Run(parameter, next).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task<TReturn> RunFinallyAsync(
+            MiddlewareResolverResult finallyResolverResult,
+            TParameter parameter,
+            CancellationToken cancellationToken)
+        {
+            if (finallyResolverResult.Middleware is ICancellableAsyncFinally<TParameter, TReturn> cancellableFinally)
+            {
+                return await cancellableFinally.Finally(parameter, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                var @finally = (IAsyncFinally<TParameter, TReturn>)finallyResolverResult.Middleware;
+                return await @finally.Finally(parameter).ConfigureAwait(false);
+            }
         }
 
         /// <summary>

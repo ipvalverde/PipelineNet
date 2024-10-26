@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace PipelineNet
 {
@@ -46,7 +47,7 @@ namespace PipelineNet
         /// </summary>
         /// <param name="middlewareType">The middleware type to be executed.</param>
         /// <exception cref="ArgumentException">Thrown if the <paramref name="middlewareType"/> is 
-        /// not an implementation of <typeparamref name="TMiddleware"/> or <see cref="TCancellableMiddleware"/>.</exception>
+        /// not an implementation of <typeparamref name="TMiddleware"/> or <typeparamref name="TCancellableMiddleware"/>.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="middlewareType"/> is null.</exception>
         protected void AddMiddleware(Type middlewareType)
         {
@@ -59,6 +60,37 @@ namespace PipelineNet
                     $"The middleware type must implement \"{typeof(TMiddleware)}\" or \"{typeof(TCancellableMiddleware)}\".");
 
             this.MiddlewareTypes.Add(middlewareType);
+        }
+
+        internal void EnsureMiddlewareNotNull(MiddlewareResolverResult middlewareResolverResult, Type middlewareType)
+        {
+            if (middlewareResolverResult == null || middlewareResolverResult.Middleware == null)
+            {
+                throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{middlewareType}'.");
+            }
+        }
+
+        internal static async Task DisposeMiddlewareAsync(MiddlewareResolverResult middlewareResolverResult)
+        {
+            if (middlewareResolverResult != null && middlewareResolverResult.Dispose)
+            {
+                var middleware = middlewareResolverResult.Middleware;
+                if (middleware != null)
+                {
+#if NETSTANDARD2_1_OR_GREATER
+                    if (middleware is IAsyncDisposable asyncDisposable)
+                    {
+                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    }
+#else
+                    await Task.FromResult(default(int)).ConfigureAwait(false);
+#endif
+                    if (middleware is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+            }
         }
     }
 }

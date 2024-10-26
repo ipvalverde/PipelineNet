@@ -67,38 +67,22 @@ namespace PipelineNet.Pipelines
                     if (index == MiddlewareTypes.Count)
                         action = (p) => { };
 
-                    if (resolverResult == null || resolverResult.Middleware == null)
-                    {
-                        throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
-                    }
-
-                    var middleware = (IMiddleware<TParameter>)resolverResult.Middleware;
-                    middleware.Run(param, action);
+                    EnsureMiddlewareNotNull(resolverResult, type);
+                    RunMiddleware(resolverResult, param, action);
                 }
                 finally
                 {
-                    if (resolverResult != null && resolverResult.Dispose)
-                    {
-                        var middleware = resolverResult.Middleware;
-                        if (middleware != null)
-                        {
-                            if (middleware is IDisposable disposable)
-                            {
-                                disposable.Dispose();
-                            }
-#if NETSTANDARD2_1_OR_GREATER
-                            else if (middleware is IAsyncDisposable)
-                            {
-                                throw new InvalidOperationException($"'{middleware.GetType()}' type only implements IAsyncDisposable." +
-                                    " Use AsyncPipeline to execute the configured pipeline.");
-                            }
-#endif
-                        }
-                    }
+                    DisposeMiddleware(resolverResult);
                 }
             };
 
             action(parameter);
+        }
+
+        private static void RunMiddleware(MiddlewareResolverResult middlewareResolverResult, TParameter parameter, Action<TParameter> next)
+        {
+            var middleware = (IMiddleware<TParameter>)middlewareResolverResult.Middleware;
+            middleware.Run(parameter, next);
         }
     }
 }
