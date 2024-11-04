@@ -88,9 +88,9 @@ You can even define a fallback that will be executed after your entire chain:
 var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentExceptionHandler>()
-    .Finally<FinallyDoSomething>();
+    .Finally<ExceptionHandlerFallback>();
 
-public class FinallyDoSomething : IFinally<Exception, bool>
+public class ExceptionHandlerFallback : IFinally<Exception, bool>
 {
     public bool Finally(Exception parameter)
     {
@@ -105,7 +105,7 @@ var result = exceptionHandlersChain.Execute(new InvalidOperationException()); //
 ```
 The result will be true because of the type used in the `Finally` method.
 
-You can also choose to throw an exception in the `Finally` method instead of returning a value:
+You can also choose to throw an exception in the finally instead of returning a value:
 ```C#
 var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>()
@@ -202,9 +202,9 @@ If you want to, you can use the asynchronous version, using asynchronous middlew
 var exceptionHandlersChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryAsyncExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentAsyncExceptionHandler>()
-    .Finally<ExceptionHandlerFallback>();
+    .Finally<ExceptionHandlerAsyncFallback>();
 
-public class ExceptionHandlerFallback : IAsyncFinally<Exception, bool>
+public class ExceptionHandlerAsyncFallback : IAsyncFinally<Exception, bool>
 {
     public Task<bool> Finally(Exception parameter)
     {
@@ -234,27 +234,22 @@ var pipeline = new AsyncPipeline<Bitmap>(new ActivatorMiddlewareResolver())
     .Add<AddTransparencyAsyncMiddleware>() // You can mix both kinds of asynchronous middleware
     .AddCancellable<AddWatermarkCancellableAsyncMiddleware>();
 
-Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
 CancellationToken cancellationToken = CancellationToken.None;
+
+Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
 await pipeline.Execute(image, cancellationToken);
 
 public class RoudCornersCancellableAsyncMiddleware : ICancellableAsyncMiddleware<Bitmap>
 {
     public async Task Run(Bitmap parameter, Func<Bitmap, Task> next, CancellationToken cancellationToken)
     {
-        await RoundCournersAsync(parameter, cancellationToken);
-        await next(parameter);
-    }
-
-    private async Task RoudCournersAsync(Bitmap bitmap, CancellationToken cancellationToken)
-    {
         // Handle somehow
-        await Task.CompletedTask;
+        await next(parameter);
     }
 }
 ```
 And to pass the cancellation token to your asynchronous chain of responsibility middleware, you can implement the `ICancellableAsyncMiddleware<TParameter, TReturn>` interface
-and pass the cancellation token argument to the `IAsynchChainOfResponsibility<TParamete, TReturnr>.Execute` method.
+and pass the cancellation token argument to the `IAsynchChainOfResponsibility<TParamete, TReturn>.Execute` method.
 
 ## Middleware resolver
 You may be wondering what is all this `ActivatorMiddlewareResolver` class being passed to every instance of pipeline and chain of responsibility.
@@ -325,7 +320,7 @@ public class RoudCornersAsyncMiddleware : IAsyncMiddleware<Bitmap>
 }
 ```
 
-Or instantiate pipeline/chain of responsibility directly:
+Or instantiate it directly:
 ```C#
 services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly);
 
@@ -379,9 +374,9 @@ With:
 var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>()
     .Chain<ArgumentExceptionHandler>()
-    .Finally<FinallyDoSomething>();
+    .Finally<ExceptionHandlerFallback>();
 
-public class FinallyDoSomething : IFinally<Exception, bool>
+public class ExceptionHandlerFallback : IFinally<Exception, bool>
 {
     public bool Finally(Exception parameter)
     {

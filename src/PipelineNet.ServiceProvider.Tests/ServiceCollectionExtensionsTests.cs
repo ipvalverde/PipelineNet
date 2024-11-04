@@ -38,7 +38,6 @@ namespace PipelineNet.ServiceProvider.Tests
             public async Task DoSomething()
             {
                 Bitmap image = (Bitmap) Image.FromFile("party-photo.png");
-
                 await _pipeline.Execute(image);
             }
         }
@@ -149,7 +148,7 @@ namespace PipelineNet.ServiceProvider.Tests
         }
 
         [Fact]
-        public async Task AddPipelineNet_Works_Readme()
+        public async Task AddMiddlewareFromAssembly_Works()
         {
             var serviceProvider = new ServiceCollection()
                 .AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly)

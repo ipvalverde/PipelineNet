@@ -54,57 +54,35 @@ namespace PipelineNet.Pipelines
                 return;
 
             int index = 0;
-            Action<TParameter> action = null;
-            action = (param) =>
+            Action<TParameter> next = null;
+            next = (parameter2) =>
             {
-                MiddlewareResolverResult resolverResult = null;
+                MiddlewareResolverResult middlewareResolverResult = null;
                 try
                 {
-                    var type = MiddlewareTypes[index];
-                    resolverResult = MiddlewareResolver.Resolve(type);
+                    var middlewareType = MiddlewareTypes[index];
+                    middlewareResolverResult = MiddlewareResolver.Resolve(middlewareType);
 
                     index++;
                     if (index == MiddlewareTypes.Count)
-                        action = (p) => { };
+                        next = (p) => { };
 
-                    if (resolverResult == null || resolverResult.Middleware == null)
-                    {
-                        throw new InvalidOperationException($"'{MiddlewareResolver.GetType()}' failed to resolve middleware of type '{type}'.");
-                    }
-
-                    if (resolverResult.IsDisposable && !(resolverResult.Middleware is IDisposable))
-                    {
-#if NETSTANDARD2_1_OR_GREATER
-                        if (resolverResult.Middleware is IAsyncDisposable)
-                        {
-                            throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type only implements IAsyncDisposable." +
-                                " Use AsyncPipeline to execute the configured pipeline.");
-                        }
-#endif
-
-                        throw new InvalidOperationException($"'{resolverResult.Middleware.GetType()}' type does not implement IDisposable.");
-                    }
-
-                    var middleware = (IMiddleware<TParameter>)resolverResult.Middleware;
-                    middleware.Run(param, action);
+                    EnsureMiddlewareNotNull(middlewareResolverResult, middlewareType);
+                    RunMiddleware(middlewareResolverResult, parameter2, next);
                 }
                 finally
                 {
-                    if (resolverResult != null && resolverResult.IsDisposable)
-                    {
-                        var middleware = resolverResult.Middleware;
-                        if (middleware != null)
-                        {
-                            if (middleware is IDisposable disposable)
-                            {
-                                disposable.Dispose();
-                            }
-                        }
-                    }
+                    DisposeMiddleware(middlewareResolverResult);
                 }
             };
 
-            action(parameter);
+            next(parameter);
+        }
+
+        private static void RunMiddleware(MiddlewareResolverResult middlewareResolverResult, TParameter parameter, Action<TParameter> next)
+        {
+            var middleware = (IMiddleware<TParameter>)middlewareResolverResult.Middleware;
+            middleware.Run(parameter, next);
         }
     }
 }

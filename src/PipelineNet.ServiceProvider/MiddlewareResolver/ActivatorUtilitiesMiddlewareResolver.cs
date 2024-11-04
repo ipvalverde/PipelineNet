@@ -26,16 +26,12 @@ namespace PipelineNet.ServiceProvider.MiddlewareResolver
         public MiddlewareResolverResult Resolve(Type type)
         {
             var middleware = ActivatorUtilities.CreateInstance(_serviceProvider, type);
-            bool isDisposable = middleware is IDisposable
-#if NETSTANDARD2_1_OR_GREATER
-                || middleware is IAsyncDisposable
-#endif
-                ;
+            bool dispose = true;
 
             return new MiddlewareResolverResult()
             {
                 Middleware = middleware,
-                IsDisposable = isDisposable
+                Dispose = dispose
             };
         }
     }

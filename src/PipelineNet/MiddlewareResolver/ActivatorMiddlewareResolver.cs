@@ -12,16 +12,12 @@ namespace PipelineNet.MiddlewareResolver
         public MiddlewareResolverResult Resolve(Type type)
         {
             var middleware = Activator.CreateInstance(type);
-            bool isDisposable = middleware is IDisposable
-#if NETSTANDARD2_1_OR_GREATER
-                || middleware is IAsyncDisposable
-#endif
-                ;
+            bool dispose = true;
 
             return new MiddlewareResolverResult()
             {
                 Middleware = middleware,
-                IsDisposable = isDisposable
+                Dispose = dispose
             };
         }
     }
