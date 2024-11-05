@@ -88,9 +88,9 @@ You can even define a fallback that will be executed after your entire chain:
 var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentExceptionHandler>()
-    .Finally<DoSomething>();
+    .Finally<ExceptionHandlerFallback>();
 
-public class DoSomething : IFinally<Exception, bool>
+public class ExceptionHandlerFallback : IFinally<Exception, bool>
 {
     public bool Finally(Exception parameter)
     {
@@ -202,9 +202,9 @@ If you want to, you can use the asynchronous version, using asynchronous middlew
 var exceptionHandlersChain = new AsyncResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryAsyncExceptionHandler>() // The order of middleware being chained matters
     .Chain<ArgumentAsyncExceptionHandler>()
-    .Finally<ExceptionHandlerFallback>();
+    .Finally<ExceptionHandlerAsyncFallback>();
 
-public class ExceptionHandlerFallback : IAsyncFinally<Exception, bool>
+public class ExceptionHandlerAsyncFallback : IAsyncFinally<Exception, bool>
 {
     public Task<bool> Finally(Exception parameter)
     {
@@ -374,9 +374,9 @@ With:
 var exceptionHandlersChain = new ResponsibilityChain<Exception, bool>(new ActivatorMiddlewareResolver())
     .Chain<OutOfMemoryExceptionHandler>()
     .Chain<ArgumentExceptionHandler>()
-    .Finally<DoSomething>();
+    .Finally<ExceptionHandlerFallback>();
 
-public class DoSomething : IFinally<Exception, bool>
+public class ExceptionHandlerFallback : IFinally<Exception, bool>
 {
     public bool Finally(Exception parameter)
     {
