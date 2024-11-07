@@ -19,6 +19,11 @@ namespace PipelineNet.ChainsOfResponsibility
         /// </summary>
         private static readonly TypeInfo FinallyTypeInfo = typeof(IFinally<TParameter, TReturn>).GetTypeInfo();
 
+        /// <summary>
+        /// Stores the shared instance of <see cref="DefaultFinally"/>.
+        /// </summary>
+        private static readonly IFinally<TParameter, TReturn> DefaultFinallyInstance = new DefaultFinally();
+
         private Type _finallyType;
         private Func<TParameter, TReturn> _finallyFunc;
 
@@ -129,7 +134,7 @@ namespace PipelineNet.ChainsOfResponsibility
                     }
                     else
                     {
-                        return default(TReturn);
+                        return DefaultFinallyInstance.Finally(parameter);
                     }
                 }
                 finally
@@ -167,7 +172,7 @@ namespace PipelineNet.ChainsOfResponsibility
                         }
                         else
                         {
-                            next = (p) => default(TReturn);
+                            next = (p) => DefaultFinallyInstance.Finally(p);
                         }
                     }
 
@@ -194,6 +199,12 @@ namespace PipelineNet.ChainsOfResponsibility
         {
             var @finally = (IFinally<TParameter, TReturn>)finallyResolverResult.Middleware;
             return @finally.Finally(parameter);
+        }
+
+        private class DefaultFinally : IFinally<TParameter, TReturn>
+        {
+            public TReturn Finally(TParameter parameter) =>
+                default(TReturn);
         }
     }
 }
