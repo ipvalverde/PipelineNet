@@ -19,6 +19,11 @@ namespace PipelineNet.ChainsOfResponsibility
         /// </summary>
         private static readonly TypeInfo FinallyTypeInfo = typeof(IFinally<TParameter, TReturn>).GetTypeInfo();
 
+        /// <summary>
+        /// Stores the shared instance of <see cref="DefaultFinally"/>.
+        /// </summary>
+        private static readonly IFinally<TParameter, TReturn> DefaultFinallyInstance = new DefaultFinally();
+
         private Type _finallyType;
         private Func<TParameter, TReturn> _finallyFunc;
 
@@ -113,7 +118,30 @@ namespace PipelineNet.ChainsOfResponsibility
         public TReturn Execute(TParameter parameter)
         {
             if (MiddlewareTypes.Count == 0)
-                return default(TReturn);
+            {
+                MiddlewareResolverResult finallyResolverResult = null;
+                try
+                {
+                    if (_finallyType != null)
+                    {
+                        finallyResolverResult = MiddlewareResolver.Resolve(_finallyType);
+                        EnsureMiddlewareNotNull(finallyResolverResult, _finallyType);
+                        return RunFinally(finallyResolverResult, parameter);
+                    }
+                    else if (_finallyFunc != null)
+                    {
+                        return _finallyFunc(parameter);
+                    }
+                    else
+                    {
+                        return DefaultFinallyInstance.Finally(parameter);
+                    }
+                }
+                finally
+                {
+                    DisposeMiddleware(finallyResolverResult);
+                }
+            }
 
             int index = 0;
             Func<TParameter, TReturn> next = null;
@@ -144,7 +172,7 @@ namespace PipelineNet.ChainsOfResponsibility
                         }
                         else
                         {
-                            next = (p) => default(TReturn);
+                            next = (p) => DefaultFinallyInstance.Finally(p);
                         }
                     }
 
@@ -171,6 +199,12 @@ namespace PipelineNet.ChainsOfResponsibility
         {
             var @finally = (IFinally<TParameter, TReturn>)finallyResolverResult.Middleware;
             return @finally.Finally(parameter);
+        }
+
+        private class DefaultFinally : IFinally<TParameter, TReturn>
+        {
+            public TReturn Finally(TParameter parameter) =>
+                default(TReturn);
         }
     }
 }

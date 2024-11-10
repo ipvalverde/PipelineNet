@@ -40,7 +40,6 @@ namespace PipelineNet
         /// </summary>
         private static readonly TypeInfo CancellableMiddlewareTypeInfo = typeof(TCancellableMiddleware).GetTypeInfo();
 
-
         /// <summary>
         /// Adds a new middleware type to the internal list of types.
         /// Middleware will be executed in the same order they are added.

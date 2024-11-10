@@ -26,6 +26,10 @@ namespace PipelineNet.ChainsOfResponsibility
         /// </summary>
         private static readonly TypeInfo CancellableFinallyTypeInfo = typeof(ICancellableAsyncFinally<TParameter, TReturn>).GetTypeInfo();
 
+        /// <summary>
+        /// Stores the shared instance of <see cref="DefaultFinally"/>.
+        /// </summary>
+        private static readonly IAsyncFinally<TParameter, TReturn> DefaultFinallyInstance = new DefaultFinally();
 
         private Type _finallyType;
         private Func<TParameter, Task<TReturn>> _finallyFunc;
@@ -92,7 +96,30 @@ namespace PipelineNet.ChainsOfResponsibility
         public async Task<TReturn> Execute(TParameter parameter, CancellationToken cancellationToken)
         {
             if (MiddlewareTypes.Count == 0)
-                return default(TReturn);
+            {
+                MiddlewareResolverResult finallyResolverResult = null;
+                try
+                {
+                    if (_finallyType != null)
+                    {
+                        finallyResolverResult = MiddlewareResolver.Resolve(_finallyType);
+                        EnsureMiddlewareNotNull(finallyResolverResult, _finallyType);
+                        return await RunFinallyAsync(finallyResolverResult, parameter, cancellationToken).ConfigureAwait(false);
+                    }
+                    else if (_finallyFunc != null)
+                    {
+                        return await _finallyFunc(parameter).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        return await DefaultFinallyInstance.Finally(parameter).ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    await DisposeMiddlewareAsync(finallyResolverResult).ConfigureAwait(false);
+                }
+            }
 
             int index = 0;
             Func<TParameter, Task<TReturn>> next = null;
@@ -123,7 +150,7 @@ namespace PipelineNet.ChainsOfResponsibility
                         }
                         else
                         {
-                            next = async (p) => await Task.FromResult(default(TReturn)).ConfigureAwait(false);
+                            next = async (p) => await DefaultFinallyInstance.Finally(p).ConfigureAwait(false);
                         }
                     }
 
@@ -234,6 +261,12 @@ namespace PipelineNet.ChainsOfResponsibility
         {
             this._finallyFunc = finallyFunc;
             return this;
+        }
+
+        private class DefaultFinally : IAsyncFinally<TParameter, TReturn>
+        {
+            public async Task<TReturn> Finally(TParameter parameter) =>
+                await Task.FromResult(default(TReturn)).ConfigureAwait(false);
         }
     }
 }

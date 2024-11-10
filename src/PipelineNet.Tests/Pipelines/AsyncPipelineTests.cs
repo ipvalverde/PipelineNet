@@ -123,7 +123,6 @@ namespace PipelineNet.Tests.Pipelines
             // Check if the level of 'personModel' is 3, which is configured by 'PersonWithEmailName' middleware.
             Assert.Equal(3, personModel.Level);
 
-
             // Creates a new instance with a 'Gender' property. The 'PersonWithGenderProperty'
             // middleware should be the last one to be executed.
             personModel = new PersonModel
