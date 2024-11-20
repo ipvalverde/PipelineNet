@@ -272,13 +272,10 @@ Install-Package PipelineNet.ServiceProvider
 Use it with dependency injection:
 ```C#
 services.AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly);
-services.AddScoped<IAsyncPipeline<Bitmap>>(serviceProvider =>
-{
-    return new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
-        .Add<RoudCornersAsyncMiddleware>()
-        .Add<AddTransparencyAsyncMiddleware>()
-        .Add<AddWatermarkAsyncMiddleware>();
-});
+services.AddScoped<IAsyncPipeline<Bitmap>>(serviceProvider => new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
+    .Add<RoudCornersAsyncMiddleware>()
+    .Add<AddTransparencyAsyncMiddleware>()
+    .Add<AddWatermarkAsyncMiddleware>());
 services.AddScoped<IMyService, MyService>();
 
 public interface IMyService

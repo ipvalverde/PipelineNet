@@ -152,13 +152,10 @@ namespace PipelineNet.ServiceProvider.Tests
         {
             var serviceProvider = new ServiceCollection()
                 .AddMiddlewareFromAssembly(typeof(RoudCornersAsyncMiddleware).Assembly)
-                .AddScoped<IAsyncPipeline<Bitmap>>(serviceProvider =>
-                {
-                    return new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
-                        .Add<RoudCornersAsyncMiddleware>()
-                        .Add<AddTransparencyAsyncMiddleware>()
-                        .Add<AddWatermarkAsyncMiddleware>();
-                })
+                .AddScoped<IAsyncPipeline<Bitmap>>(serviceProvider => new AsyncPipeline<Bitmap>(new ServiceProviderMiddlewareResolver(serviceProvider))
+                    .Add<RoudCornersAsyncMiddleware>()
+                    .Add<AddTransparencyAsyncMiddleware>()
+                    .Add<AddWatermarkAsyncMiddleware>())
                 .AddScoped<IMyService, MyService>()
                 .AddLogging(bulider => bulider.Services.AddSingleton<ILoggerProvider>(new TestOutputHelperLoggerProvider(_output)))
                 .BuildServiceProvider();
