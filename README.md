@@ -352,8 +352,11 @@ An implementation of the [middleware resolver for Unity](https://github.com/Shan
 Install-Package PipelineNet.Unity
 ```
 
-## Migrate from PipelineNet 0.10 to 0.20
-In PipelineNet 0.20, `Finally` overloads that use `Func` have been made obsolete. This will be removed in the next major version.
+## Migrate from PipelineNet 0.10 to 0.11
+
+### Changes to the `Finally` method
+
+The `Finally` overloads that use `Func` have been made obsolete. This will be removed in the next major version.
 
 To migrate replace:
 ```C#
@@ -382,6 +385,10 @@ public class ExceptionHandlerFallback : IFinally<Exception, bool>
     }
 }
 ```
+
+### Changes to `MiddlewareResolverResult.IsDisposable`
+
+The `IsDisposable` property is now marked as obsolete, please use the `Dispose` instead. The `IsDisposable` will be removed in the next major version.
 
 ## License
 This project is licensed under MIT. Please, feel free to contribute with code, issues or tips :)
