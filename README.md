@@ -28,7 +28,9 @@ dotnet add package PipelineNet
 - [Middleware resolver](#middleware-resolver)
   - [ServiceProvider implementation](#serviceprovider-implementation)
   - [Unity implementation](#unity-implementation)
-- [Migrate from PipelineNet 0.10 to 0.20](#migrate-from-pipelinenet-010-to-020)
+- [Migrate from PipelineNet 0.10 to 0.11](#migrate-from-pipelinenet-010-to-011)
+  - [Changes to the `Finally` method](#changes-to-the-finally-method)
+  - [Changes to `MiddlewareResolverResult.IsDisposable`](#changes-to-middlewareresolverresultisdisposable)
 - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
